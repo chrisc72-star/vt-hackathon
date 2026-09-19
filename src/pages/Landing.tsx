@@ -3,9 +3,9 @@ import { ArrowRight, Check, GitBranch, Github, Orbit, Terminal } from "lucide-re
 import { Link } from "react-router";
 
 const rings = [
-  { size: "size-56 sm:size-72", duration: 26, node: { label: "repo", accent: true } },
-  { size: "size-80 sm:size-[26rem]", duration: 38, node: { label: "lessons", accent: false } },
-  { size: "size-[28rem] sm:size-[40rem]", duration: 54, node: { label: "commits", accent: false } },
+  { size: "size-56 sm:size-72", y: 14, duration: 3.2, delay: 0, node: { label: "repo", accent: true } },
+  { size: "size-80 sm:size-[26rem]", y: 22, duration: 4.1, delay: 0.6, node: { label: "lessons", accent: false } },
+  { size: "size-[28rem] sm:size-[40rem]", y: 30, duration: 5.4, delay: 1.2, node: { label: "commits", accent: false } },
 ];
 
 function OrbitDiagram() {
@@ -15,13 +15,11 @@ function OrbitDiagram() {
         <motion.div
           key={ring.size}
           className={`absolute rounded-full border border-[#d8d0bf] ${ring.size}`}
-          animate={{ rotate: 360 }}
-          transition={{ duration: ring.duration, repeat: Infinity, ease: "linear" }}
+          animate={{ y: [-ring.y, ring.y, -ring.y] }}
+          transition={{ duration: ring.duration, repeat: Infinity, ease: "easeInOut", delay: ring.delay }}
         >
           <div className="absolute -top-[13px] left-1/2 -translate-x-1/2">
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ duration: ring.duration, repeat: Infinity, ease: "linear" }}
+            <span
               className={`flex items-center gap-1.5 border px-2.5 py-1 font-mono text-[10px] font-semibold ${
                 ring.node.accent
                   ? "border-[#d99a4e] bg-[#fbeede] text-[#a85416]"
@@ -30,7 +28,7 @@ function OrbitDiagram() {
             >
               <span className={`size-1.5 rounded-full ${ring.node.accent ? "bg-[#d97b2b]" : "bg-[#1d3f2c]"}`} />
               {ring.node.label}
-            </motion.div>
+            </span>
           </div>
         </motion.div>
       ))}
@@ -52,11 +50,11 @@ export default function Landing() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#faf8f2] text-[#1f231c]">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-10">
-        <Link to="/" className="flex items-center gap-3 font-mono text-sm font-semibold tracking-tight">
+        <Link to="/" className="flex items-center gap-3 text-sm font-semibold tracking-tight">
           <span className="flex size-8 items-center justify-center rounded-sm bg-[#1d3f2c] text-[#f7e8cd]">
             <Orbit className="size-4" />
           </span>
-          <span>orbit</span>
+          <span className="font-serif text-xl">orbit</span>
         </Link>
         <div className="flex items-center gap-3 font-mono text-xs">
           <span className="hidden items-center gap-2 text-[#6d6a5e] sm:flex">
@@ -80,15 +78,15 @@ export default function Landing() {
             </span>
             a course for your code
           </div>
-          <h1 className="max-w-3xl font-mono text-5xl font-semibold leading-[1.02] tracking-[-.07em] sm:text-6xl lg:text-[5.6rem]">
+          <h1 className="max-w-3xl font-serif text-6xl font-semibold leading-[1.02] tracking-[-.02em] sm:text-7xl lg:text-[5.6rem]">
             Put your code<br />
             <span className="text-[#c2571a]">in orbit.</span>
           </h1>
-          <p className="mt-8 max-w-xl font-sans text-lg leading-8 text-[#5d5f55]">
+          <p className="mt-8 max-w-xl text-lg leading-8 text-[#5d5f55]">
             Orbit turns a GitHub repo into a practical computer science course. Learn the patterns, architecture, and decisions hiding inside your own codebase — at your depth.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link to="/auth?mode=signup" className="group inline-flex items-center justify-center gap-3 rounded-sm bg-[#1d3f2c] px-5 py-3.5 font-mono text-sm font-semibold text-[#f7ecda] shadow-[4px_4px_0_#e3b98b] transition-transform hover:-translate-y-0.5">
+            <Link to="/auth?mode=signup" className="group inline-flex items-center justify-center gap-3 rounded-sm bg-[#1d3f2c] px-5 py-3.5 text-sm font-semibold text-[#f7ecda] shadow-[4px_4px_0_#e3b98b] transition-transform hover:-translate-y-0.5">
               Create your account <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link to="/auth" className="inline-flex items-center justify-center gap-2 rounded-sm border border-[#d5d0c4] bg-white px-5 py-3.5 font-mono text-sm font-semibold hover:bg-[#f9efe2]">
@@ -113,7 +111,7 @@ export default function Landing() {
           <div className="mb-12 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
               <p className="font-mono text-xs font-semibold uppercase tracking-[.18em] text-[#a85416]">/ the flight path</p>
-              <h2 className="mt-3 font-mono text-3xl font-semibold tracking-[-.05em] sm:text-4xl">Three steps to liftoff.</h2>
+              <h2 className="mt-3 font-serif text-4xl font-semibold tracking-[-.02em] sm:text-5xl">Three steps to liftoff.</h2>
             </div>
             <p className="max-w-sm font-mono text-xs leading-6 text-[#6d6a5e]">
               The first version is intentionally narrow: GitHub in, useful lessons out.
@@ -130,8 +128,8 @@ export default function Landing() {
                   <span className="font-mono text-xs text-[#9a958a]">{n}</span>
                   <Icon className="size-5 text-[#d97b2b] transition-transform group-hover:-translate-y-1" />
                 </div>
-                <h3 className="mt-12 font-mono text-lg font-semibold">{t}</h3>
-                <p className="mt-3 font-sans text-sm leading-6 text-[#6d6a5e]">{d}</p>
+                <h3 className="mt-12 font-serif text-2xl font-semibold">{t}</h3>
+                <p className="mt-3 text-sm leading-6 text-[#6d6a5e]">{d}</p>
               </div>
             ))}
           </div>
@@ -143,11 +141,11 @@ export default function Landing() {
           <div className="flex items-center gap-2 font-mono text-xs text-[#b06a2a]">
             <Orbit className="size-4" /> BUILT FOR LEARNING IN PUBLIC
           </div>
-          <h2 className="mt-4 max-w-2xl font-mono text-3xl font-semibold leading-tight tracking-[-.05em] sm:text-4xl">
+          <h2 className="mt-4 max-w-2xl font-serif text-4xl font-semibold leading-tight tracking-[-.02em] sm:text-5xl">
             Your project is the textbook. Your commits are the proof.
           </h2>
         </div>
-        <Link to="/auth?mode=signup" className="inline-flex items-center justify-center gap-3 border border-[#1d3f2c] px-5 py-3 font-mono text-sm font-semibold text-[#1d3f2c] transition-colors hover:bg-[#fbeee0]">
+        <Link to="/auth?mode=signup" className="inline-flex items-center justify-center gap-3 border border-[#1d3f2c] px-5 py-3 text-sm font-semibold text-[#1d3f2c] transition-colors hover:bg-[#fbeee0]">
           Start learning with Orbit <ArrowRight className="size-4" />
         </Link>
       </section>
