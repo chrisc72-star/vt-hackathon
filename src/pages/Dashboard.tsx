@@ -1,55 +1,44 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
-import { LayoutDashboard, LogOut } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, BookOpen, Check, ChevronRight, CircleDot, FileCode2, Github, GitBranch, Layers3, LogOut, Search, Sparkles, Terminal, Upload } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
+
+type Skill = "beginner" | "intermediate" | "advanced";
+const lessons = [
+  { number: "01", title: "Read the room", detail: "Map the stack and project boundaries", done: true },
+  { number: "02", title: "Follow a request", detail: "Trace data through the application", done: false },
+  { number: "03", title: "State & boundaries", detail: "Understand where decisions live", done: false },
+  { number: "04", title: "Ship a change", detail: "Make your first guided improvement", done: false },
+];
+
+function isGithubUrl(value: string) { return /^https?:\/\/(www\.)?github\.com\/[^/]+\/[^/]+\/?$/.test(value.trim()); }
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [repo, setRepo] = useState("");
+  const [skill, setSkill] = useState<Skill | null>(null);
+  const [courseReady, setCourseReady] = useState(false);
+  const [activeLesson, setActiveLesson] = useState(1);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState("");
+  const repoName = repo.split("/").filter(Boolean).slice(-2).join("/") || "your-repo";
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
+  const handleGenerate = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!isGithubUrl(repo)) { setError("Paste a public GitHub URL, like https://github.com/owner/repository"); return; }
+    if (!skill) { setError("Choose the depth that feels right for you"); return; }
+    setError(""); setIsGenerating(true);
+    window.setTimeout(() => { setIsGenerating(false); setCourseReady(true); }, 900);
   };
+  const handleSignOut = async () => { await signOut(); navigate("/"); };
 
-  return (
-    <main className="min-h-screen bg-background px-6 py-10 text-foreground">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">
-              Authenticated workspace
-            </p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight">
-              Welcome{user?.name ? `, ${user.name}` : ""}
-            </h1>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="cursor-pointer gap-2 self-start"
-            onClick={handleSignOut}
-          >
-            <LogOut className="size-4" />
-            Sign out
-          </Button>
-        </header>
+  return <main className="min-h-screen bg-[#f7f7f2] font-mono text-[#172019]">
+    <header className="border-b border-[#dce2d8] bg-[#fbfcf8]"><div className="mx-auto flex max-w-[1400px] items-center justify-between px-5 py-4 lg:px-8"><div className="flex items-center gap-3"><div className="flex size-8 items-center justify-center bg-[#173f2b] text-[#d9f2b5]"><Terminal className="size-4" /></div><span className="text-sm font-semibold tracking-tight">learn//local</span><span className="hidden border-l border-[#d8dfd4] pl-3 text-[10px] text-[#8a968b] sm:block">STUDENT WORKSPACE</span></div><div className="flex items-center gap-4"><span className="hidden text-xs text-[#758177] sm:block">{user?.email ?? "student@workspace"}</span><button onClick={handleSignOut} className="flex items-center gap-2 text-xs text-[#657369] hover:text-[#173f2b]"><LogOut className="size-3.5" /> <span className="hidden sm:inline">sign out</span></button></div></div></header>
 
-        <Card className="border-border/70 shadow-none">
-          <CardHeader>
-            <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <LayoutDashboard className="size-5" />
-            </div>
-            <CardTitle>Your dashboard is ready</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm leading-6 text-muted-foreground">
-            Replace this starter content with the product&apos;s authenticated
-            experience. The route is protected and sign-in returns here by
-            default.
-          </CardContent>
-        </Card>
-      </div>
-    </main>
-  );
+    <div className="mx-auto max-w-[1400px] px-5 py-8 lg:px-8 lg:py-10"><AnimatePresence mode="wait">{!courseReady ? <motion.div key="setup" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mx-auto max-w-4xl"><div className="mb-10"><p className="text-xs text-[#6f8d5e]">$ learn-local init --personalized</p><h1 className="mt-4 text-4xl font-semibold leading-tight tracking-[-.07em] sm:text-6xl">Build a course<br /><span className="text-[#5b8a43]">from your code.</span></h1><p className="mt-5 max-w-xl font-sans text-base leading-7 text-[#667269]">Start with a public GitHub repository. We’ll read its patterns, then shape a practical CS and software architecture course around your current level.</p></div><div className="border border-[#c7d1c3] bg-[#fbfcf8] shadow-[8px_8px_0_#e4e9df]"><div className="flex items-center justify-between border-b border-[#dce2d8] bg-[#f0f3ec] px-5 py-3 text-[11px] text-[#7b887d]"><span className="flex items-center gap-2"><Github className="size-3.5" /> REPOSITORY CONNECTOR</span><span>step 1 / 2</span></div><form onSubmit={handleGenerate} className="p-5 sm:p-8"><label className="mb-2 block text-xs font-semibold text-[#596b5b]">GITHUB REPOSITORY URL</label><div className="flex flex-col gap-3 sm:flex-row"><div className="relative flex-1"><Search className="absolute left-3 top-3.5 size-4 text-[#94a095]" /><Input value={repo} onChange={(e) => setRepo(e.target.value)} placeholder="https://github.com/owner/repository" className="h-12 rounded-sm border-[#cad5c8] bg-white pl-10 font-mono text-sm" /></div><Button disabled={isGenerating} className="h-12 rounded-sm bg-[#173f2b] px-5 font-mono text-xs text-white hover:bg-[#285a3d]">{isGenerating ? <><Sparkles className="mr-2 size-4 animate-pulse" /> Reading repo...</> : <>Analyze repository <ArrowRight className="ml-2 size-4" /></>}</Button></div><p className="mt-3 flex items-center gap-2 text-[11px] text-[#849188]"><CircleDot className="size-3 text-[#79a957]" /> Public repositories only in v1. We cache the codebase map so lessons stay fast.</p>{error && <p className="mt-4 border-l-2 border-[#bd704f] bg-[#fcf0ea] px-3 py-2 text-xs text-[#984e35]">{error}</p>}<div className="my-8 border-t border-[#e1e6df]" /><label className="mb-3 block text-xs font-semibold text-[#596b5b]">YOUR CURRENT DEPTH</label><div className="grid gap-2 sm:grid-cols-3">{([ ["beginner", "I’m building fundamentals", "Concepts first, plain language"] , ["intermediate", "I can read most code", "Patterns, tradeoffs, architecture"], ["advanced", "I’m sharpening systems thinking", "Deep dives, constraints, edge cases"] ] as [Skill, string, string][]).map(([value, title, detail]) => <button type="button" key={value} onClick={() => { setSkill(value); setError(""); }} className={`border p-4 text-left transition-colors ${skill === value ? "border-[#6c9c4d] bg-[#edf5e7] shadow-[3px_3px_0_#bfd5b3]" : "border-[#d8e0d5] bg-white hover:border-[#9bb38d]"}`}><span className="flex items-center justify-between text-xs font-semibold">{title}<span className={`size-3 rounded-full border ${skill === value ? "border-[#6c9c4d] bg-[#76a954]" : "border-[#bcc8ba]"}`} /></span><span className="mt-2 block font-sans text-xs text-[#778278]">{detail}</span></button>)}</div></form></div><div className="mt-7 grid gap-3 text-[11px] text-[#7b877d] sm:grid-cols-3"><div className="flex gap-2"><FileCode2 className="size-4 text-[#79a957]" /> Stack & patterns mapped</div><div className="flex gap-2"><Layers3 className="size-4 text-[#79a957]" /> Lessons at your depth</div><div className="flex gap-2"><GitBranch className="size-4 text-[#79a957]" /> Push improvements as you go</div></div></motion.div> : <motion.div key="course" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid gap-8 lg:grid-cols-[280px_1fr] lg:items-start"><aside className="border border-[#cbd5c8] bg-[#fbfcf8] lg:sticky lg:top-6"><div className="border-b border-[#dce2d8] bg-[#eef3e9] p-5"><p className="text-[10px] text-[#788679]">YOUR GENERATED COURSE</p><h2 className="mt-2 break-words text-lg font-semibold tracking-[-.04em]">{repoName}</h2><div className="mt-3 flex items-center gap-2 text-[10px] text-[#6d8c5d]"><span className="size-1.5 rounded-full bg-[#79a957]" /> summary cached</div></div><div className="p-3"><p className="px-2 py-2 text-[10px] text-[#8a968c]">MODULE 01 / FOUNDATIONS</p>{lessons.map((lesson, index) => <button key={lesson.number} onClick={() => setActiveLesson(index)} className={`flex w-full gap-3 border-l-2 p-3 text-left ${activeLesson === index ? "border-[#6d9d4d] bg-[#edf5e7]" : "border-transparent hover:bg-[#f3f6f0]"}`}><span className={`text-xs ${lesson.done ? "text-[#70a04d]" : "text-[#8a968d]"}`}>{lesson.done ? "✓" : lesson.number}</span><span><span className="block text-xs font-semibold">{lesson.title}</span><span className="mt-1 block font-sans text-[11px] text-[#7c887d]">{lesson.detail}</span></span></button>)}</div><div className="border-t border-[#dce2d8] p-4"><button onClick={() => { setCourseReady(false); setRepo(""); setSkill(null); }} className="flex items-center gap-2 text-[11px] text-[#6f7c71] hover:text-[#173f2b]"><Upload className="size-3.5" /> Analyze another repo</button></div></aside><section><div className="mb-8 flex flex-col justify-between gap-4 border-b border-[#dce2d8] pb-6 sm:flex-row sm:items-end"><div><p className="text-xs text-[#6f8d5e]">$ course status --repo {repoName}</p><h1 className="mt-2 text-3xl font-semibold tracking-[-.06em] sm:text-4xl">Your path through the codebase.</h1></div><span className="border border-[#c9d8c1] bg-[#edf5e7] px-3 py-2 text-[10px] text-[#568044]">depth: {skill}</span></div><div className="grid gap-4 sm:grid-cols-3"><div className="border border-[#d3ddd0] bg-[#fbfcf8] p-4"><p className="text-[10px] text-[#859187]">STACK DETECTED</p><p className="mt-3 text-sm font-semibold">React · TypeScript</p><p className="mt-1 text-[11px] text-[#7e8a80]">+ 4 patterns mapped</p></div><div className="border border-[#d3ddd0] bg-[#fbfcf8] p-4"><p className="text-[10px] text-[#859187]">EST. TIME</p><p className="mt-3 text-sm font-semibold">42 min / module</p><p className="mt-1 text-[11px] text-[#7e8a80]">learn at your pace</p></div><div className="border border-[#d3ddd0] bg-[#fbfcf8] p-4"><p className="text-[10px] text-[#859187]">PROGRESS</p><p className="mt-3 text-sm font-semibold">1 / 4 lessons</p><div className="mt-2 h-1 bg-[#e2e9de]"><div className="h-full w-1/4 bg-[#79a957]" /></div></div></div><article className="mt-6 border border-[#c8d4c5] bg-[#fbfcf8] shadow-[6px_6px_0_#e4e9df]"><div className="flex items-center justify-between border-b border-[#dce2d8] bg-[#f0f3ec] px-5 py-3 text-[10px] text-[#7c897e]"><span>LESSON {lessons[activeLesson].number} / 04</span><span className="flex items-center gap-2"><span className="size-1.5 rounded-full bg-[#79a957]" /> generated for {repoName}</span></div><div className="p-5 sm:p-8"><p className="text-xs text-[#71915f]">MODULE 01 / {activeLesson === 0 ? "ORIENTATION" : "ARCHITECTURE"}</p><h2 className="mt-3 text-3xl font-semibold tracking-[-.06em]">{lessons[activeLesson].title}</h2><p className="mt-4 max-w-2xl font-sans text-base leading-7 text-[#68756b]">{activeLesson === 0 ? `Before we change anything, let’s build a shared mental model of ${repoName}. We’ll identify its stack, entry points, and the patterns that keep it together.` : `Trace a real user action through ${repoName}. You’ll see how the pieces connect, then make a small change with confidence.`}</p><div className="my-7 grid gap-3 border-l-2 border-[#80aa61] bg-[#f0f5eb] p-4 text-xs leading-6 text-[#536652] sm:grid-cols-[auto_1fr]"><span className="text-[#78a254]">→</span><span><strong className="font-mono">Your objective:</strong> {activeLesson === 0 ? "name the three boundaries that shape this project." : "find the handler, follow its data, and explain the tradeoff."}</span></div><div className="grid gap-4 sm:grid-cols-2"><div className="border border-[#dce3d9] p-4"><div className="flex items-center gap-2 text-xs font-semibold"><BookOpen className="size-4 text-[#719b54]" /> CONCEPT</div><p className="mt-3 font-sans text-sm leading-6 text-[#6c786e]">We’ll connect a CS principle to a decision already present in your code.</p></div><div className="border border-[#dce3d9] p-4"><div className="flex items-center gap-2 text-xs font-semibold"><Terminal className="size-4 text-[#719b54]" /> HANDS-ON</div><p className="mt-3 font-sans text-sm leading-6 text-[#6c786e]">Make a change locally, then push it back to your project when it feels right.</p></div></div><div className="mt-8 flex flex-col justify-between gap-3 border-t border-[#e0e6de] pt-5 sm:flex-row sm:items-center"><span className="text-[11px] text-[#849087]">lesson content is tailored to your repo</span><Button onClick={() => setActiveLesson(Math.min(activeLesson + 1, lessons.length - 1))} className="rounded-sm bg-[#173f2b] font-mono text-xs text-white hover:bg-[#285a3d]">{activeLesson === lessons.length - 1 ? "Course complete" : "Mark complete & continue"}<ChevronRight className="ml-2 size-4" /></Button></div></div></article></section></motion.div>}</AnimatePresence></div>
+  </main>;
 }
