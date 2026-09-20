@@ -151,7 +151,15 @@ createRoot(document.getElementById("root")!).render(
                 }
               />
               <Route
-                path="/project-help"
+                path="/project-help/*"
+                element={
+                  <RequireAuth>
+                    <ProjectHelp />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/start-project/*"
                 element={
                   <RequireAuth>
                     <ProjectHelp />
