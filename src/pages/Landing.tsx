@@ -4,10 +4,10 @@ import { Link } from "react-router";
 
 // Elliptical orbits, tilted and rotating slowly, each carrying a small dot.
 const orbits = [
-  { rx: 44, ry: 32, rotate: -14, duration: 26, wobble: -6, dot: "#d97b2b", dotR: 1.3 },
-  { rx: 55, ry: 40, rotate: -14, duration: 34, wobble: 5, dot: "#8aa384", dotR: 1.1 },
-  { rx: 44, ry: 32, rotate: 32, duration: 30, wobble: 6, dot: "#c6552e", dotR: 1.1 },
-  { rx: 57, ry: 41, rotate: 32, duration: 40, wobble: -4, dot: "#c98a4b", dotR: 0.9 },
+  { rx: 44, ry: 32, rotate: -14, duration: 30, dot: "#d97b2b", dotR: 1.3, dotDur: 12 },
+  { rx: 55, ry: 40, rotate: -14, duration: 42, dot: "#8aa384", dotR: 1.1, dotDur: 16 },
+  { rx: 44, ry: 32, rotate: 32, duration: 36, dot: "#c6552e", dotR: 1.1, dotDur: 14 },
+  { rx: 57, ry: 41, rotate: 32, duration: 50, dot: "#c98a4b", dotR: 0.9, dotDur: 20 },
 ];
 
 const cards = [
@@ -44,13 +44,18 @@ function OrbitDiagram() {
       <div className="absolute left-1/2 top-1/2 size-[62%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#e7ecd9]" />
 
       {/* Tilted elliptical orbits as SVG so the dots follow the true curve.
-          Each ring slowly wobbles its rotation; each dot travels its path. */}
+          Each tilted ring plane sweeps a full 360° around the still core,
+          which reads as a 3D orbit precessing. Dots ride the ellipse path. */}
       <svg viewBox="0 0 100 100" className="absolute inset-0 size-full">
-        {orbits.map((o, i) => {
-          const pathId = `orbit-${i}`;
-          return (
-            <g key={i} transform={`rotate(${o.rotate} 50 50)`}>
-              <motion.ellipse
+        {orbits.map((o, i) => (
+          <motion.g
+            key={i}
+            animate={{ rotate: 360 }}
+            transition={{ duration: o.duration, repeat: Infinity, ease: "linear" }}
+            style={{ transformOrigin: "50px 50px" }}
+          >
+            <g transform={`rotate(${o.rotate} 50 50)`}>
+              <ellipse
                 cx="50"
                 cy="50"
                 rx={o.rx}
@@ -58,27 +63,17 @@ function OrbitDiagram() {
                 fill="none"
                 stroke="#d3d5c8"
                 strokeWidth="0.45"
-                animate={{ rotate: [0, o.wobble, 0] }}
-                transition={{ duration: o.duration, repeat: Infinity, ease: "easeInOut" }}
-                style={{ transformOrigin: "50px 50px" }}
               />
-              <motion.g
-                animate={{ rotate: [0, o.wobble, 0] }}
-                transition={{ duration: o.duration, repeat: Infinity, ease: "easeInOut" }}
-                style={{ transformOrigin: "50px 50px" }}
-              >
-                <circle r={o.dotR} fill={o.dot}>
-                  <animateMotion
-                    dur={`${o.duration}s`}
-                    repeatCount="indefinite"
-                    path={`M ${50 - o.rx} 50 a ${o.rx} ${o.ry} 0 1 0 ${o.rx * 2} 0 a ${o.rx} ${o.ry} 0 1 0 -${o.rx * 2} 0`}
-                  />
-                </circle>
-              </motion.g>
-              <path id={pathId} fill="none" stroke="none" d={`M ${50 - o.rx} 50 a ${o.rx} ${o.ry} 0 1 0 ${o.rx * 2} 0 a ${o.rx} ${o.ry} 0 1 0 -${o.rx * 2} 0`} />
+              <circle r={o.dotR} fill={o.dot}>
+                <animateMotion
+                  dur={`${o.dotDur}s`}
+                  repeatCount="indefinite"
+                  path={`M ${50 - o.rx} 50 a ${o.rx} ${o.ry} 0 1 0 ${o.rx * 2} 0 a ${o.rx} ${o.ry} 0 1 0 -${o.rx * 2} 0`}
+                />
+              </circle>
             </g>
-          );
-        })}
+          </motion.g>
+        ))}
       </svg>
 
       {/* Dark core with sparkle + light green glow */}
@@ -90,13 +85,9 @@ function OrbitDiagram() {
       >
         <div className="absolute inset-0 rounded-full bg-[#b7cfae]/50 blur-xl" />
         <div className="relative flex size-full items-center justify-center rounded-full bg-[#28352b] shadow-[0_18px_40px_-12px_rgba(40,53,43,0.35)]">
-          <motion.span
-            animate={{ rotate: 360 }}
-            transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
-            className="text-[#eef2e4]"
-          >
+          <span className="text-[#eef2e4]">
             <Sparkle className="size-9 sm:size-11" fill="currentColor" />
-          </motion.span>
+          </span>
           <span className="absolute right-[18%] top-[22%] size-4 rounded-full bg-[#dd6f4a] sm:size-5" />
           <span className="absolute bottom-[26%] left-[24%] size-2 rounded-full bg-[#8aa384]" />
         </div>
