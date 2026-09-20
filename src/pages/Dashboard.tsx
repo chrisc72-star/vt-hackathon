@@ -121,6 +121,7 @@ export default function Dashboard() {
 
   const summarize = useAction(api.generation.summarizeRepo);
   const fetchProjectFiles = useAction(api.github.fetchProjectFiles);
+  const fetchProjectFile = useAction(api.github.fetchProjectFile);
   const pushFiles = useAction(api.github.pushFiles);
   const generate = useAction(api.generation.generateCourse);
   const toggleComplete = useMutation(api.courses.toggleLessonComplete);
@@ -188,6 +189,20 @@ export default function Dashboard() {
       .finally(() => { if (!cancelled) setIsLoadingRepositoryFiles(false); });
     return () => { cancelled = true; };
   }, [activeProject?._id, activeProject?.owner, activeProject?.repo, activeProject?.defaultBranch, courseKey, fetchProjectFiles]);
+
+  useEffect(() => {
+    if (!activeProject || !selectedExplorerFile || selectedExplorerFile.endsWith("/")) return;
+    const existing = repositoryFiles.find((file: RepositoryFile) => file.path === selectedExplorerFile);
+    if (existing?.content) return;
+    let cancelled = false;
+    fetchProjectFile({ owner: activeProject.owner, repo: activeProject.repo, branch: activeProject.defaultBranch, path: selectedExplorerFile })
+      .then((file) => {
+        if (cancelled) return;
+        setRepositoryFilesByProject((files) => ({ ...files, [courseKey]: (files[courseKey] ?? []).map((item) => item.path === file.path ? file : item) }));
+      })
+      .catch((err) => { if (!cancelled) setRepositoryLoadError(err instanceof Error ? err.message : `Could not load ${selectedExplorerFile}.`); });
+    return () => { cancelled = true; };
+  }, [activeProject?._id, activeProject?.owner, activeProject?.repo, activeProject?.defaultBranch, selectedExplorerFile, courseKey, repositoryFiles, fetchProjectFile]);
 
   const createExplorerEntry = (event: React.FormEvent) => {
     event.preventDefault();
