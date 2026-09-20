@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleDot, FileCode2, Github, GitBranch, Layers3, Loader2, LogOut, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleDot, FileCode2, Github, GitBranch, Home, Layers3, Loader2, LogOut, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [skill, setSkill] = useState<Skill | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<Id<"projects"> | null>(null);
   const [creatingNewCourse, setCreatingNewCourse] = useState(false);
+  const [workspaceTab, setWorkspaceTab] = useState<"today" | "lessons">("today");
   const [error, setError] = useState("");
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -68,6 +69,7 @@ export default function Dashboard() {
       await generate({ projectId, skillLevel: skill });
       setSelectedProjectId(projectId);
       setCreatingNewCourse(false);
+      setWorkspaceTab("today");
       setStatusText("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
@@ -85,7 +87,27 @@ export default function Dashboard() {
   return <main className="orbit-workspace min-h-screen bg-[#faf8f2] text-[#1f231c]">
     <header className="border-b border-[#e0dbd0] bg-[#fcfaf5]"><div className="mx-auto flex max-w-[1400px] items-center justify-between px-5 py-4 lg:px-8"><div className="flex items-center gap-3"><div className="flex size-8 items-center justify-center bg-[#1d3f2c] text-[#f7e8cd]"><Terminal className="size-4" /></div><span className="font-serif text-lg font-semibold">orbit</span><span className="hidden border-l border-[#e2ddd1] pl-3 font-mono text-[10px] text-[#8a867a] sm:block">STUDENT WORKSPACE</span></div><div className="flex items-center gap-4"><Link to="/settings" className="flex items-center gap-2 text-xs text-[#6d6a5e] transition-colors hover:text-[#1d3f2c]"><SettingsIcon className="size-3.5" /> <span className="hidden sm:inline">settings</span></Link><span className="hidden text-xs text-[#7a776b] sm:block">{user?.email ?? "student@workspace"}</span><button onClick={handleSignOut} className="flex items-center gap-2 text-xs text-[#6d6a5e] hover:text-[#1d3f2c]"><LogOut className="size-3.5" /> <span className="hidden sm:inline">sign out</span></button></div></div></header>
 
-    <div className="mx-auto max-w-[1400px] px-5 py-8 lg:px-8 lg:py-10"><AnimatePresence mode="wait">
+    <div className="mx-auto flex max-w-[1400px] gap-6 px-5 py-8 lg:px-8 lg:py-10">
+      {course && !creatingNewCourse && (
+        <aside className="hidden w-52 shrink-0 lg:block">
+          <div className="sticky top-6 rounded-sm border border-[#e0dbd0] bg-[#fcfaf5] p-3">
+            <p className="px-3 py-3 font-mono text-[10px] font-semibold tracking-[.16em] text-[#8a867a]">WORKSPACE</p>
+            <button onClick={() => setWorkspaceTab("today")} className={`flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-sm font-semibold transition-colors ${workspaceTab === "today" ? "bg-[#fbeede] text-[#a85416]" : "text-[#6d6a5e] hover:bg-[#f5f0e6]"}`}><Home className="size-4" /> Today</button>
+            <button onClick={() => setWorkspaceTab("lessons")} className={`flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-sm font-semibold transition-colors ${workspaceTab === "lessons" ? "bg-[#fbeede] text-[#a85416]" : "text-[#6d6a5e] hover:bg-[#f5f0e6]"}`}><BookOpen className="size-4" /> Lessons</button>
+            <Link to="/settings" className="flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-sm font-semibold text-[#6d6a5e] transition-colors hover:bg-[#f5f0e6]"><SettingsIcon className="size-4" /> Settings</Link>
+            <div className="mt-4 border-t border-[#e0dbd0] pt-4"><p className="px-3 font-mono text-[10px] text-[#8a867a]">PROGRESS</p><p className="mt-2 px-3 font-serif text-2xl font-semibold">{totalLessons ? Math.round((completed.size / totalLessons) * 100) : 0}%</p><div className="mx-3 mt-2 h-1 bg-[#e8e2d4]"><div className="h-full bg-[#d97b2b]" style={{ width: `${totalLessons ? (completed.size / totalLessons) * 100 : 0}%` }} /></div></div>
+          </div>
+        </aside>
+      )}
+      <div className="min-w-0 flex-1">
+        {course && !creatingNewCourse && (
+          <div className="mb-6 flex gap-2 overflow-x-auto lg:hidden">
+            <button onClick={() => setWorkspaceTab("today")} className={`flex shrink-0 items-center gap-2 rounded-sm border px-4 py-2 text-xs font-semibold ${workspaceTab === "today" ? "border-[#d97b2b] bg-[#fbeede] text-[#a85416]" : "border-[#e0dbd0] bg-[#fcfaf5] text-[#6d6a5e]"}`}><Home className="size-3.5" /> Today</button>
+            <button onClick={() => setWorkspaceTab("lessons")} className={`flex shrink-0 items-center gap-2 rounded-sm border px-4 py-2 text-xs font-semibold ${workspaceTab === "lessons" ? "border-[#d97b2b] bg-[#fbeede] text-[#a85416]" : "border-[#e0dbd0] bg-[#fcfaf5] text-[#6d6a5e]"}`}><BookOpen className="size-3.5" /> Lessons</button>
+            <Link to="/settings" className="flex shrink-0 items-center gap-2 rounded-sm border border-[#e0dbd0] bg-[#fcfaf5] px-4 py-2 text-xs font-semibold text-[#6d6a5e]"><SettingsIcon className="size-3.5" /> Settings</Link>
+          </div>
+        )}
+        <AnimatePresence mode="wait">
       {!course || creatingNewCourse ? (
         <motion.div key="setup" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mx-auto max-w-4xl">
           {creatingNewCourse && course && (
@@ -115,6 +137,16 @@ export default function Dashboard() {
             </form>
           </div>
           <div className="mt-7 grid gap-3 font-mono text-[11px] text-[#7a776b] sm:grid-cols-3"><div className="flex gap-2"><FileCode2 className="size-4 text-[#d97b2b]" /> Stack & patterns mapped</div><div className="flex gap-2"><Layers3 className="size-4 text-[#d97b2b]" /> Lessons at your depth</div><div className="flex gap-2"><GitBranch className="size-4 text-[#d97b2b]" /> Exercises you can push as commits</div></div>
+        </motion.div>
+      ) : workspaceTab === "today" ? (
+        <motion.div key="today" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-5xl">
+          <div className="mb-10"><p className="font-mono text-xs text-[#b06a2a]">$ orbit status --today</p><h1 className="mt-3 font-serif text-5xl font-semibold tracking-[-.03em]">Good to see you{user?.name ? `, ${user.name}` : ""}.</h1><p className="mt-3 max-w-xl text-base leading-7 text-[#6d6a5e]">Your curiosity has a direction. Pick up where you left off.</p></div>
+          <div className="border border-[#d8dfd4] bg-[#eef3e9] p-5 sm:p-6"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="font-mono text-[10px] tracking-[.16em] text-[#789071]">LEARNING FROM</p><h2 className="mt-2 font-serif text-2xl font-semibold">{activeProject?.owner}/{activeProject?.repo}</h2><p className="mt-1 text-sm text-[#6d7d6c]">Personalized course · {course.skillLevel} depth</p></div><button onClick={() => setWorkspaceTab("lessons")} className="inline-flex items-center gap-2 text-xs font-semibold text-[#a85416] hover:text-[#c2571a]">View course <ArrowRight className="size-4" /></button></div></div>
+          <div className="mt-6 grid gap-5 lg:grid-cols-[1.3fr_.7fr]">
+            <button onClick={() => { setActiveIdx(Math.max(flatLessons.findIndex((lesson) => !completed.has(`${lesson.moduleIndex}:${lesson.lessonIndex}`)), 0)); setWorkspaceTab("lessons"); }} className="group border border-[#ddd6c9] bg-[#fcfaf5] p-6 text-left shadow-[6px_6px_0_#e6d4bc] transition-all hover:-translate-y-1 hover:border-[#d97b2b] sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="font-mono text-[10px] tracking-[.16em] text-[#8a867a]">UP NEXT · YOUR CURRENT LESSON</p><h2 className="mt-4 font-serif text-3xl font-semibold">{flatLessons.find((lesson) => !completed.has(`${lesson.moduleIndex}:${lesson.lessonIndex}`))?.title ?? "Course complete"}</h2><p className="mt-3 max-w-lg text-sm leading-6 text-[#6d6a5e]">{flatLessons.find((lesson) => !completed.has(`${lesson.moduleIndex}:${lesson.lessonIndex}`))?.objective ?? "You completed every lesson in this course."}</p></div><ChevronRight className="mt-1 size-5 text-[#d97b2b] transition-transform group-hover:translate-x-1" /></div><div className="mt-8 flex items-center gap-4 font-mono text-[10px] text-[#8a867a]"><span>{completed.size} / {totalLessons} complete</span><span>·</span><span>{totalLessons - completed.size} lessons remaining</span></div></button>
+            <div className="border border-[#ddd6c9] bg-[#fcfaf5] p-6"><p className="font-mono text-[10px] tracking-[.16em] text-[#8a867a]">COURSE PROGRESS</p><p className="mt-4 font-serif text-5xl font-semibold text-[#1d3f2c]">{totalLessons ? Math.round((completed.size / totalLessons) * 100) : 0}<span className="text-2xl">%</span></p><div className="mt-5 h-2 bg-[#e8e2d4]"><div className="h-full bg-[#d97b2b] transition-all" style={{ width: `${totalLessons ? (completed.size / totalLessons) * 100 : 0}%` }} /></div><p className="mt-3 text-xs leading-5 text-[#7a776b]">Keep going — every completed lesson adds a new layer to your mental model.</p></div>
+          </div>
+          <div className="mt-6 border border-[#ddd6c9] bg-[#fcfaf5] p-6"><div className="flex items-center justify-between"><div><p className="font-mono text-[10px] tracking-[.16em] text-[#8a867a]">ALL LESSONS</p><h2 className="mt-2 font-serif text-2xl font-semibold">Your learning path</h2></div><button onClick={() => setWorkspaceTab("lessons")} className="font-mono text-[11px] text-[#a85416] hover:text-[#c2571a]">open lessons →</button></div><div className="mt-5 grid gap-2 sm:grid-cols-2">{flatLessons.map((lesson) => <button key={`${lesson.moduleIndex}-${lesson.lessonIndex}`} onClick={() => { setActiveIdx(flatLessons.indexOf(lesson)); setWorkspaceTab("lessons"); }} className="flex items-center gap-3 border border-[#e5e0d6] p-3 text-left transition-colors hover:border-[#d97b2b] hover:bg-[#fbeede]"><span className={`font-mono text-xs ${completed.has(`${lesson.moduleIndex}:${lesson.lessonIndex}`) ? "text-[#1d3f2c]" : "text-[#9a958a]"}`}>{completed.has(`${lesson.moduleIndex}:${lesson.lessonIndex}`) ? "✓" : String(flatLessons.indexOf(lesson) + 1).padStart(2, "0")}</span><span className="truncate text-xs font-semibold">{lesson.title}</span><ChevronRight className="ml-auto size-3.5 text-[#9a958a]" /></button>)}</div></div>
         </motion.div>
       ) : (
         <motion.div key="course" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid gap-8 lg:grid-cols-[280px_1fr] lg:items-start">
@@ -189,6 +221,6 @@ export default function Dashboard() {
           </section>
         </motion.div>
       )}
-    </AnimatePresence></div>
+    </AnimatePresence></div></div>
   </main>;
 }
