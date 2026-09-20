@@ -67,27 +67,50 @@ export const fetchRepo = internalAction({
       return res.json();
     };
 
-    const repoInfo = await ghFetch(`/repos/${owner}/${repo}`);
-    const branch = repoInfo.default_branch as string;
-    const commitSha = repoInfo.object?.sha ?? (await ghFetch(`/repos/${owner}/${repo}/commits/${branch}`)).sha;
+    let branch = "HEAD";
+    let commitSha = "HEAD";
+    let description = "";
+    let tree: TreeItem[] = [];
 
-    const treeData = await ghFetch(`/repos/${owner}/${repo}/git/trees/${commitSha}?recursive=1`);
-    const tree: TreeItem[] = treeData.tree ?? [];
+    try {
+      // Only these small metadata calls use the GitHub API. File contents below
+      // come from raw.githubusercontent.com and do not consume API quota.
+      const repoInfo = await ghFetch(`/repos/${owner}/${repo}`);
+      branch = repoInfo.default_branch as string;
+      description = (repoInfo.description as string) ?? "";
+      const commit = await ghFetch(`/repos/${owner}/${repo}/commits/${branch}`);
+      commitSha = commit.sha as string;
+      const treeData = await ghFetch(`/repos/${owner}/${repo}/git/trees/${commitSha}?recursive=1`);
+      tree = treeData.tree ?? [];
+    } catch (error) {
+      // Public GitHub API quota can be exhausted even for valid public repos.
+      // Continue with raw GitHub instead of blocking course generation.
+      const message = error instanceof Error ? error.message : "";
+      if (!message.includes("rate limit")) throw error;
+      tree = [
+        "README.md", "package.json", "tsconfig.json", "vite.config.ts", "src/main.tsx",
+        "src/App.tsx", "src/index.css", "src/pages/index.tsx", "src/pages/App.tsx",
+        "requirements.txt", "pyproject.toml", "go.mod", "Cargo.toml", "Dockerfile",
+      ].map((path) => ({ path, type: "blob" }));
+    }
+
     const fileCount = tree.filter((f) => f.type === "blob").length;
     const digestPaths = selectDigestFiles(tree);
+    const fallbackPaths = digestPaths.length > 0 ? digestPaths : tree.map((f) => f.path);
 
-    // Fetch the digest file contents (raw, capped at 8KB each).
+    // Raw GitHub is separate from the API rate limit and supports public files.
     const digestFiles: { path: string; content: string }[] = [];
-    for (const path of digestPaths) {
+    const rawRefs = [...new Set([commitSha, branch, "main", "master"])];
+    for (const path of fallbackPaths.slice(0, 20)) {
       try {
-        const res = await fetch(`${GITHUB_API}/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${commitSha}`, { headers });
-        if (res.ok) {
-          const data = await res.json();
-          const buff = Buffer.from(data.content ?? "", "base64");
-          digestFiles.push({ path, content: buff.toString("utf-8").slice(0, 8192) });
+        for (const ref of rawRefs) {
+          const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path}`;
+          const res = await fetch(rawUrl);
+          if (res.ok) {
+            digestFiles.push({ path, content: (await res.text()).slice(0, 8192) });
+            break;
+          }
         }
-        if (digestFiles.length >= 20) break;
-        await new Promise((r) => setTimeout(r, 50)); // stay friendly to rate limits
       } catch {
         // skip files that fail to fetch
       }
@@ -96,7 +119,7 @@ export const fetchRepo = internalAction({
     return {
       owner,
       repo,
-      description: (repoInfo.description as string) ?? "",
+      description,
       defaultBranch: branch,
       commitSha,
       fileCount,
