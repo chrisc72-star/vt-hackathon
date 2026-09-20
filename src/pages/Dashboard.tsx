@@ -13,6 +13,32 @@ import { Link, useNavigate } from "react-router";
 
 type Skill = "beginner" | "intermediate" | "advanced";
 type RepositoryFile = { path: string; content: string; readable: boolean };
+type PyodideRuntime = {
+  runPythonAsync: (code: string) => Promise<unknown>;
+  setStdout: (options: { batched: (text: string) => void }) => void;
+  setStderr: (options: { batched: (text: string) => void }) => void;
+};
+type PyodideWindow = Window & { loadPyodide?: (options: { indexURL: string }) => Promise<PyodideRuntime> };
+let pyodidePromise: Promise<PyodideRuntime> | null = null;
+
+function loadPyodideRuntime() {
+  if (pyodidePromise) return pyodidePromise;
+  pyodidePromise = new Promise<PyodideRuntime>((resolve, reject) => {
+    const pyodideWindow = window as PyodideWindow;
+    const start = () => {
+      if (!pyodideWindow.loadPyodide) { reject(new Error("Python runtime did not load.")); return; }
+      pyodideWindow.loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.2/full/" }).then(resolve).catch(reject);
+    };
+    if (pyodideWindow.loadPyodide) { start(); return; }
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js";
+    script.onload = start;
+    script.onerror = () => reject(new Error("Could not load the Python runtime."));
+    document.head.appendChild(script);
+  });
+  return pyodidePromise;
+}
+
 type EditorLanguage = "javascript" | "typescript" | "python" | "java" | "cpp" | "csharp" | "c" | "go" | "rust" | "ruby" | "php" | "swift" | "kotlin" | "dart" | "scala" | "r" | "sql" | "bash";
 
 const COMMON_EDITOR_LANGUAGES: EditorLanguage[] = ["javascript", "typescript", "python", "java", "cpp", "csharp", "c", "go", "rust", "ruby", "php", "swift", "kotlin", "dart", "scala", "r", "sql", "bash"];
@@ -112,6 +138,7 @@ export default function Dashboard() {
   const [selectedExplorerFile, setSelectedExplorerFile] = useState("");
   const [newEntryType, setNewEntryType] = useState<"file" | "folder" | null>(null);
   const [newEntryName, setNewEntryName] = useState("");
+  const [isRunningCode, setIsRunningCode] = useState(false);
   const [repositoryFilesByProject, setRepositoryFilesByProject] = useState<Record<string, RepositoryFile[]>>({});
   const [isLoadingRepositoryFiles, setIsLoadingRepositoryFiles] = useState(false);
   const active = flatLessons[Math.min(activeIdx, Math.max(flatLessons.length - 1, 0))];
@@ -160,33 +187,41 @@ export default function Dashboard() {
     setNewEntryType(null);
   };
 
-  const runEditorCode = () => {
-    if (!editorKey) return;
+  const runEditorCode = async () => {
+    if (!editorKey || isRunningCode) return;
     const output: string[] = [];
-    if (editorLanguage !== "javascript") {
-      output.push(`${EDITOR_LANGUAGE_LABELS[editorLanguage]} selected. The browser console currently runs JavaScript only.`);
-      setConsoleOutputs((outputs) => ({ ...outputs, [editorKey]: output }));
-      return;
-    }
+    setIsRunningCode(true);
     const formatValue = (value: unknown) => {
       if (typeof value === "string") return value;
       try { return JSON.stringify(value, null, 2); } catch { return String(value); }
     };
-    const lessonConsole = {
-      log: (...values: unknown[]) => output.push(...values.map(formatValue)),
-      info: (...values: unknown[]) => output.push(...values.map(formatValue)),
-      warn: (...values: unknown[]) => output.push(`WARN: ${values.map(formatValue).join(" ")}`),
-      error: (...values: unknown[]) => output.push(`ERROR: ${values.map(formatValue).join(" ")}`),
-    };
     try {
       if (!editorValue.trim()) {
-        output.push("Nothing to run. Add JavaScript to the editor first.");
-      } else {
+        output.push(`Nothing to run. Add ${EDITOR_LANGUAGE_LABELS[editorLanguage]} to the editor first.`);
+      } else if (editorLanguage === "python") {
+        output.push("Loading Python runtime...");
+        const pyodide = await loadPyodideRuntime();
+        output.length = 0;
+        pyodide.setStdout({ batched: (text) => output.push(text) });
+        pyodide.setStderr({ batched: (text) => output.push(`ERROR: ${text}`) });
+        await pyodide.runPythonAsync(editorValue);
+        if (output.length === 0) output.push("Process finished with no console output.");
+      } else if (editorLanguage === "javascript") {
+        const lessonConsole = {
+          log: (...values: unknown[]) => output.push(...values.map(formatValue)),
+          info: (...values: unknown[]) => output.push(...values.map(formatValue)),
+          warn: (...values: unknown[]) => output.push(`WARN: ${values.map(formatValue).join(" ")}`),
+          error: (...values: unknown[]) => output.push(`ERROR: ${values.map(formatValue).join(" ")}`),
+        };
         new Function("console", editorValue)(lessonConsole);
         if (output.length === 0) output.push("Process finished with no console output.");
+      } else {
+        output.push(`${EDITOR_LANGUAGE_LABELS[editorLanguage]} selected. The browser console currently runs JavaScript and Python.`);
       }
     } catch (err) {
       output.push(`ERROR: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setIsRunningCode(false);
     }
     setConsoleOutputs((outputs) => ({ ...outputs, [editorKey]: output }));
   };
@@ -378,7 +413,7 @@ export default function Dashboard() {
                     <div className="min-w-0">
                     <div className="flex flex-col gap-3 border-b border-[#405044] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex flex-wrap items-center gap-2"><Code2 className="size-4 text-[#d97b2b]" /><span className="font-mono text-[10px] tracking-[.14em] text-[#e8e2d4]">LESSON WORKSPACE</span><span className="max-w-48 truncate font-mono text-[10px] text-[#8fa18c]">{selectedExplorerFile || "lesson-draft"}</span><select value={editorLanguage} onChange={(event) => { if (editorKey) setEditorLanguages((languages) => ({ ...languages, [editorKey]: event.target.value as EditorLanguage })); }} className="border border-[#405044] bg-[#182019] px-2 py-1 font-mono text-[10px] text-[#d8e4d2] outline-none focus:border-[#d97b2b]">{COMMON_EDITOR_LANGUAGES.map((language) => <option key={language} value={language}>{EDITOR_LANGUAGE_LABELS[language]}{detectedEditorLanguages.includes(language) ? " · detected" : ""}</option>)}</select><span className="hidden font-mono text-[10px] text-[#8fa18c] sm:inline">// {editorLanguage === "javascript" ? "run in browser" : "language detected from repo"}</span></div>
-                      <div className="flex items-center gap-3 self-start sm:self-auto"><button type="button" onClick={runEditorCode} className="inline-flex items-center gap-1.5 bg-[#d97b2b] px-3 py-1.5 font-mono text-[10px] font-semibold text-[#202a22] transition-colors hover:bg-[#f0a15d]"><Play className="size-3" /> Run</button><button type="button" onClick={() => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: "" })); }} className="font-mono text-[10px] text-[#b9c8ad] hover:text-[#f3d3a7]">clear draft</button></div>
+                      <div className="flex items-center gap-3 self-start sm:self-auto"><button type="button" onClick={runEditorCode} disabled={isRunningCode} className="inline-flex items-center gap-1.5 bg-[#d97b2b] disabled:cursor-wait disabled:opacity-60 px-3 py-1.5 font-mono text-[10px] font-semibold text-[#202a22] transition-colors hover:bg-[#f0a15d]"><Play className="size-3" /> Run</button><button type="button" onClick={() => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: "" })); }} className="font-mono text-[10px] text-[#b9c8ad] hover:text-[#f3d3a7]">clear draft</button></div>
                     </div>
                     <textarea value={editorValue} onChange={(event) => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: event.target.value })); }} placeholder={`// Try the exercise for “${active.title}”\n// Write your ${EDITOR_LANGUAGE_LABELS[editorLanguage]} solution here...`} spellCheck={false} className="min-h-56 w-full resize-y border-0 bg-[#182019] px-4 py-4 font-mono text-xs leading-6 text-[#d8e4d2] outline-none placeholder:text-[#6f8270] focus:ring-2 focus:ring-inset focus:ring-[#d97b2b]" />
                     <div className="border-t border-[#405044] px-4 py-2 font-mono text-[10px] text-[#8fa18c]">draft saved locally for this lesson · {editorValue.split("\n").length} lines</div>
