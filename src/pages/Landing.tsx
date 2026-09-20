@@ -43,7 +43,9 @@ function OrbitDiagram() {
       {/* Soft halo behind the core */}
       <div className="absolute left-1/2 top-1/2 size-[62%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#e7ecd9]" />
 
-      {/* Tilted elliptical orbits with traveling dots */}
+      {/* Tilted elliptical orbits with traveling dots.
+          The core stays perfectly still; each ring breathes (subtle scale)
+          and its dot travels the full ellipse. */}
       {orbits.map((o, i) => (
         <div
           key={i}
@@ -54,7 +56,11 @@ function OrbitDiagram() {
             transform: `translate(-50%, -50%) rotate(${o.rotate}deg)`,
           }}
         >
-          <div className="absolute inset-0 rounded-[50%] border border-[#d3d5c8]" />
+          <motion.div
+            className="absolute inset-0 rounded-[50%] border border-[#d3d5c8]"
+            animate={{ scale: [1, 1.035, 1] }}
+            transition={{ duration: o.duration / 2.6, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
+          />
           <motion.div
             className="absolute inset-0"
             animate={{ rotate: 360 }}
@@ -85,17 +91,22 @@ function OrbitDiagram() {
         <span className="absolute bottom-[26%] left-[24%] size-2 rounded-full bg-[#8aa384]" />
       </motion.div>
 
-      {/* Floating stat cards */}
+      {/* Floating stat cards with hover animation */}
       {cards.map((card, i) => (
         <motion.div
           key={card.label}
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.45 + i * 0.15 }}
-          className={`absolute z-20 w-44 rounded-md border border-[#e0ddd2] bg-white/95 p-3.5 shadow-[0_10px_30px_-12px_rgba(40,53,43,0.18)] backdrop-blur-sm sm:w-52 ${card.position}`}
+          whileHover={{
+            y: -6,
+            scale: 1.03,
+            boxShadow: "0 18px 40px -12px rgba(40,53,43,0.28)",
+          }}
+          className={`group absolute z-20 w-44 cursor-default rounded-md border border-[#e0ddd2] bg-white/95 p-3.5 shadow-[0_10px_30px_-12px_rgba(40,53,43,0.18)] backdrop-blur-sm transition-colors hover:border-[#c9c5b8] sm:w-52 ${card.position}`}
         >
           <div className="flex items-center gap-2">
-            <span className={`flex size-5 items-center justify-center rounded ${card.chip}`}>{card.icon}</span>
+            <span className={`flex size-5 items-center justify-center rounded ${card.chip} transition-transform group-hover:scale-110`}>{card.icon}</span>
             <span className="font-mono text-[9px] font-semibold tracking-[.14em] text-[#8a867a]">{card.label}</span>
           </div>
           <p className="mt-2 text-sm font-semibold text-[#1f231c]">{card.title}</p>
