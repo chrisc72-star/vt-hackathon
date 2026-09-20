@@ -73,7 +73,9 @@ export const beginOAuth = action({
     const authUrl = new URL("https://github.com/login/oauth/authorize");
     authUrl.searchParams.set("client_id", clientId);
     authUrl.searchParams.set("redirect_uri", redirectUri);
-    authUrl.searchParams.set("scope", "read:user repo");
+    // GitHub Apps use installation permissions; this scope requests only identity
+    // access during the user authorization step.
+    authUrl.searchParams.set("scope", "read:user");
     authUrl.searchParams.set("state", state);
     return { url: authUrl.toString() };
   },
