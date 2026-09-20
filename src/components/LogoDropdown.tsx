@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import logo from "@/assets/logo.svg";
+const logo = "/orbit-logo.svg";
 import { useAuth } from "@/hooks/use-auth";
 import { Home, LogOut } from "lucide-react";
 import { useNavigate } from "react-router";
@@ -36,10 +36,10 @@ export function LogoDropdown() {
         <Button variant="ghost" size="icon" className="h-10 w-10">
           <img
             src={logo}
-            alt="Logo"
-            width={32}
-            height={32}
-            className="rounded-lg"
+            alt="Orbit"
+            width={120}
+            height={40}
+            className="h-8 w-auto max-w-[120px] object-contain object-left"
           />
         </Button>
       </DropdownMenuTrigger>

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowLeft, Check, LogOut, Mail, Moon, Orbit, Palette, ShieldCheck, Sun, Terminal } from "lucide-react";
+import { ArrowLeft, Check, LogOut, Mail, Moon, Palette, ShieldCheck, Sun, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
@@ -45,8 +45,7 @@ export default function Settings() {
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 lg:px-8">
           <Link to="/dashboard" className="flex items-center gap-3">
-            <span className="flex size-8 items-center justify-center bg-[#1d3f2c] text-[#f7e8cd]"><Orbit className="size-4" /></span>
-            <span className="font-serif text-lg font-semibold">orbit</span>
+            <img src="/orbit-logo.svg" alt="Orbit" className="h-9 w-auto max-w-[140px] object-contain object-left" />
           </Link>
           <div className="flex items-center gap-4">
             <span className="hidden text-xs text-muted-foreground sm:block">{user?.email ?? "student@workspace"}</span>
