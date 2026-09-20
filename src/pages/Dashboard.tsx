@@ -173,7 +173,7 @@ export default function Dashboard() {
     fetchProjectFiles({ owner: activeProject.owner, repo: activeProject.repo, branch: activeProject.defaultBranch })
       .then((result) => {
         if (cancelled) return;
-        const loadedFiles = result.files.length > 0 ? result.files : flatLessons.flatMap((lesson) => lesson.relevantFiles).filter((path, index, paths) => paths.indexOf(path) === index).map((path) => ({ path, content: "", readable: true }));
+        const loadedFiles = result.files;
         setRepositoryFilesByProject((files) => ({ ...files, [courseKey]: loadedFiles }));
         const firstReadable = loadedFiles.find((file) => file.readable);
         setSelectedExplorerFile(firstReadable?.path || "");
@@ -181,10 +181,9 @@ export default function Dashboard() {
       .catch((err) => {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : "Could not load repository files.";
-        const fallbackFiles = flatLessons.flatMap((lesson) => lesson.relevantFiles).filter((path, index, paths) => paths.indexOf(path) === index).map((path) => ({ path, content: "", readable: true }));
-        setRepositoryFilesByProject((files) => ({ ...files, [courseKey]: fallbackFiles }));
-        setSelectedExplorerFile(fallbackFiles[0]?.path || "");
-        setRepositoryLoadError(`${message} Showing lesson-mapped files instead.`);
+        setRepositoryFilesByProject((files) => ({ ...files, [courseKey]: [] }));
+        setSelectedExplorerFile("");
+        setRepositoryLoadError(message.includes("rate limit") ? "GitHub API rate limit reached. Add GITHUB_TOKEN in the Keys panel to load the real repository tree." : message);
       })
       .finally(() => { if (!cancelled) setIsLoadingRepositoryFiles(false); });
     return () => { cancelled = true; };
@@ -458,7 +457,7 @@ export default function Dashboard() {
                       <div className="flex gap-1 border-b border-[#405044] px-2 py-2"><button type="button" onClick={() => { setNewEntryType("file"); setNewEntryName(""); }} className={`flex size-7 items-center justify-center text-[#b9c8ad] hover:bg-[#26352a] hover:text-[#f3d3a7] ${newEntryType === "file" ? "bg-[#26352a] text-[#f3d3a7]" : ""}`} aria-label="Create new file" title="New file"><FilePlus2 className="size-3.5" /></button><button type="button" onClick={() => { setNewEntryType("folder"); setNewEntryName(""); }} className={`flex size-7 items-center justify-center text-[#b9c8ad] hover:bg-[#26352a] hover:text-[#f3d3a7] ${newEntryType === "folder" ? "bg-[#26352a] text-[#f3d3a7]" : ""}`} aria-label="Create new folder" title="New folder"><FolderPlus className="size-3.5" /></button></div>
                       {newEntryType && <form onSubmit={createExplorerEntry} className="border-b border-[#405044] p-2"><input autoFocus value={newEntryName} onChange={(event) => setNewEntryName(event.target.value)} placeholder={newEntryType === "file" ? "filename.ts" : "folder-name"} className="w-full border border-[#405044] bg-[#101610] px-2 py-1.5 font-mono text-[10px] text-[#d8e4d2] outline-none placeholder:text-[#6f8270] focus:border-[#d97b2b]" /><div className="mt-2 flex gap-2"><button type="submit" className="font-mono text-[9px] font-semibold text-[#f3d3a7]">create</button><button type="button" onClick={() => setNewEntryType(null)} className="font-mono text-[9px] text-[#8fa18c]">cancel</button></div></form>}
                       {repositoryLoadError && <p className="border-b border-[#405044] px-3 py-2 font-mono text-[9px] leading-4 text-[#f0a15d]">{repositoryLoadError}</p>}
-                      <div className="max-h-64 overflow-y-auto py-2">{isLoadingRepositoryFiles ? <p className="px-3 py-3 font-mono text-[10px] text-[#6f8270]">Loading GitHub tree...</p> : explorerRows.length ? explorerRows.map((entry) => { const isFolder = entry.endsWith("/"); const cleanPath = isFolder ? entry.slice(0, -1) : entry; const label = cleanPath.split("/").pop() || entry; const depth = cleanPath.split("/").length - 1; return <button type="button" key={entry} onClick={() => !isFolder && setSelectedExplorerFile(entry)} className={`flex w-full items-center gap-2 py-1.5 pr-2 text-left font-mono text-[10px] transition-colors ${selectedExplorerFile === entry ? "bg-[#2b3b2e] text-[#f3d3a7]" : "text-[#b9c8ad] hover:bg-[#26352a]"}`} style={{ paddingLeft: `${10 + depth * 10}px` }}>{isFolder ? <Folder className="size-3 shrink-0 text-[#d97b2b]" /> : <FileCode2 className="size-3 shrink-0 text-[#8fa18c]" />}<span className="truncate">{label}{isFolder ? "/" : ""}</span></button>; }) : <p className="px-3 py-3 font-mono text-[10px] leading-4 text-[#6f8270]">No mapped files yet.</p>}</div>
+                      <div className="max-h-64 overflow-y-auto py-2">{isLoadingRepositoryFiles ? <p className="px-3 py-3 font-mono text-[10px] text-[#6f8270]">Loading GitHub tree...</p> : explorerRows.length ? explorerRows.map((entry) => { const isFolder = entry.endsWith("/"); const cleanPath = isFolder ? entry.slice(0, -1) : entry; const label = cleanPath.split("/").pop() || entry; const depth = cleanPath.split("/").length - 1; return <button type="button" key={entry} onClick={() => !isFolder && setSelectedExplorerFile(entry)} className={`flex w-full items-center gap-2 py-1.5 pr-2 text-left font-mono text-[10px] transition-colors ${selectedExplorerFile === entry ? "bg-[#2b3b2e] text-[#f3d3a7]" : "text-[#b9c8ad] hover:bg-[#26352a]"}`} style={{ paddingLeft: `${10 + depth * 10}px` }}>{isFolder ? <Folder className="size-3 shrink-0 text-[#d97b2b]" /> : <FileCode2 className="size-3 shrink-0 text-[#8fa18c]" />}<span className="truncate">{label}{isFolder ? "/" : ""}</span></button>; }) : <p className="px-3 py-3 font-mono text-[10px] leading-4 text-[#6f8270]">No verified GitHub files loaded.</p>}</div>
                       <p className="border-t border-[#405044] px-3 py-2 font-mono text-[9px] leading-4 text-[#6f8270]">New entries are local lesson drafts until you push them.</p>
                     </aside>
                     <div className="min-w-0">
