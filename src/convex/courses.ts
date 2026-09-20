@@ -75,6 +75,15 @@ export const upsertProject = internalMutation({
       await ctx.db.patch(existing._id, { defaultBranch });
       return existing._id;
     }
+
+    const projectCount = (await ctx.db
+      .query("projects")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect()).length;
+    if (projectCount >= 2) {
+      throw new Error("You already have 2 courses, which is the maximum allowed.");
+    }
+
     return ctx.db.insert("projects", { userId, owner, repo, defaultBranch, createdAt: Date.now() });
   },
 });

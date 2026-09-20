@@ -25,13 +25,15 @@ export default function Dashboard() {
 
   const [repoUrl, setRepoUrl] = useState("");
   const [skill, setSkill] = useState<Skill | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<Id<"projects"> | null>(null);
+  const [creatingNewCourse, setCreatingNewCourse] = useState(false);
   const [error, setError] = useState("");
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState("");
 
   const projects = useQuery(api.courses.myProjects, {}) ?? [];
-  const activeProject: Doc<"projects"> | undefined = projects[0];
+  const activeProject: Doc<"projects"> | undefined = projects.find((project) => project._id === selectedProjectId) ?? projects[0];
   const course = useQuery(api.courses.latestCourse, activeProject ? { projectId: activeProject._id } : "skip") ?? null;
   const progress = useQuery(api.courses.courseProgress, course ? { courseId: course._id } : "skip") ?? [];
 
@@ -64,6 +66,8 @@ export default function Dashboard() {
       // Use the ID returned by the action instead of the potentially stale
       // reactive projects query. Convex updates that query asynchronously.
       await generate({ projectId, skillLevel: skill });
+      setSelectedProjectId(projectId);
+      setCreatingNewCourse(false);
       setStatusText("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
@@ -82,7 +86,7 @@ export default function Dashboard() {
     <header className="border-b border-[#e0dbd0] bg-[#fcfaf5]"><div className="mx-auto flex max-w-[1400px] items-center justify-between px-5 py-4 lg:px-8"><div className="flex items-center gap-3"><div className="flex size-8 items-center justify-center bg-[#1d3f2c] text-[#f7e8cd]"><Terminal className="size-4" /></div><span className="font-serif text-lg font-semibold">orbit</span><span className="hidden border-l border-[#e2ddd1] pl-3 font-mono text-[10px] text-[#8a867a] sm:block">STUDENT WORKSPACE</span></div><div className="flex items-center gap-4"><Link to="/settings" className="flex items-center gap-2 text-xs text-[#6d6a5e] transition-colors hover:text-[#1d3f2c]"><SettingsIcon className="size-3.5" /> <span className="hidden sm:inline">settings</span></Link><span className="hidden text-xs text-[#7a776b] sm:block">{user?.email ?? "student@workspace"}</span><button onClick={handleSignOut} className="flex items-center gap-2 text-xs text-[#6d6a5e] hover:text-[#1d3f2c]"><LogOut className="size-3.5" /> <span className="hidden sm:inline">sign out</span></button></div></div></header>
 
     <div className="mx-auto max-w-[1400px] px-5 py-8 lg:px-8 lg:py-10"><AnimatePresence mode="wait">
-      {!course ? (
+      {!course || creatingNewCourse ? (
         <motion.div key="setup" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mx-auto max-w-4xl">
           <div className="mb-10">
             <p className="font-mono text-xs text-[#b06a2a]">$ orbit init --personalized</p>
@@ -117,6 +121,18 @@ export default function Dashboard() {
               <h2 className="mt-2 break-words font-serif text-xl font-semibold">{course.title}</h2>
               <div className="mt-3 flex items-center gap-2 font-mono text-[10px] text-[#a06a34]"><span className="size-1.5 rounded-full bg-[#d97b2b]" /> {completed.size} / {totalLessons} lessons complete</div>
             </div>
+            {projects.length > 1 && (
+              <div className="border-b border-[#e0dbd0] p-3">
+                <p className="px-2 py-2 font-mono text-[10px] text-[#8a867a]">YOUR COURSES · {projects.length}/2</p>
+                <div className="space-y-1">
+                  {projects.map((project) => (
+                    <button key={project._id} onClick={() => { setSelectedProjectId(project._id); setCreatingNewCourse(false); setError(""); setActiveIdx(0); }} className={`flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-[11px] ${activeProject?._id === project._id && !creatingNewCourse ? "bg-[#fbeede] text-[#a85416]" : "text-[#7a776b] hover:bg-[#f5f0e6]"}`}>
+                      <Github className="size-3.5" /><span className="truncate">{project.owner}/{project.repo}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="max-h-[50vh] overflow-y-auto p-3">
               {course.modules.map((module, mi) => (
                 <div key={mi}>
@@ -129,7 +145,7 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-            <div className="border-t border-[#e0dbd0] p-4"><button onClick={() => { setRepoUrl(""); setSkill(null); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="flex items-center gap-2 text-[11px] text-[#7a776b] hover:text-[#1d3f2c]"><Upload className="size-3.5" /> New course from another repo</button></div>
+            <div className="border-t border-[#e0dbd0] p-4"><button onClick={() => { if (projects.length >= 2) { setError("You can have up to 2 courses. Remove an existing course before adding another."); return; } setCreatingNewCourse(true); setRepoUrl(""); setSkill(null); setError(""); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="flex items-center gap-2 text-[11px] text-[#7a776b] hover:text-[#1d3f2c]"><Upload className="size-3.5" /> {projects.length >= 2 ? "Course limit reached (2/2)" : "New course from another repo"}</button></div>
           </aside>
           <section>
             <div className="mb-8 flex flex-col justify-between gap-4 border-b border-[#e0dbd0] pb-6 sm:flex-row sm:items-end">
