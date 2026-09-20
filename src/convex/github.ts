@@ -68,15 +68,20 @@ export const beginOAuth = action({
     const redirectUri = process.env.GITHUB_OAUTH_REDIRECT_URI || (process.env.CONVEX_SITE_URL ? `${process.env.CONVEX_SITE_URL}/github/oauth/callback` : "");
     if (!clientId || !clientSecret) throw new Error("GitHub connection is not configured: add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to the Convex Keys panel.");
     if (!redirectUri) throw new Error("GitHub connection is not configured: add GITHUB_OAUTH_REDIRECT_URI to the Convex Keys panel. It must be https://<deployment>.convex.site/github/oauth/callback (not the .convex.cloud URL).");
-    const state = crypto.randomUUID();
+    const state = `${Date.now().toString(36)}-${Array.from(crypto.getRandomValues(new Uint8Array(24)), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
     await ctx.runMutation(internal.githubConnections.createOAuthState, { userId, state, expiresAt: Date.now() + 10 * 60 * 1000 });
-    const authUrl = new URL("https://github.com/login/oauth/authorize");
-    authUrl.searchParams.set("client_id", clientId);
-    authUrl.searchParams.set("redirect_uri", redirectUri);
-    // GitHub Apps use installation permissions; this scope requests only identity
-    // access during the user authorization step.
-    authUrl.searchParams.set("scope", "read:user");
-    authUrl.searchParams.set("state", state);
+    let authUrl: URL;
+    try {
+      authUrl = new URL("https://github.com/login/oauth/authorize");
+      authUrl.searchParams.set("client_id", clientId);
+      authUrl.searchParams.set("redirect_uri", redirectUri);
+      // GitHub App user authorization uses the installation permissions; only
+      // request the user's identity scope here.
+      authUrl.searchParams.set("scope", "read:user");
+      authUrl.searchParams.set("state", state);
+    } catch {
+      throw new Error("GitHub OAuth configuration is invalid. Check GITHUB_CLIENT_ID and GITHUB_OAUTH_REDIRECT_URI in the Convex Keys panel.");
+    }
     return { url: authUrl.toString() };
   },
 });
