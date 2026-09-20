@@ -66,26 +66,27 @@ const EDITOR_LANGUAGE_LABELS: Record<EditorLanguage, string> = {
 
 function detectEditorLanguages(files: string[]): EditorLanguage[] {
   const paths = files.map((file) => file.toLowerCase());
+  const hasExtension = (extensions: string[]) => paths.some((file) => extensions.some((extension) => file.endsWith(extension)));
   const detected: EditorLanguage[] = [];
   const add = (language: EditorLanguage) => { if (!detected.includes(language)) detected.push(language); };
-  if (paths.some((file) => /\\.(tsx?|mts|cts)$/.test(file))) add("typescript");
-  if (paths.some((file) => /\\.(jsx?|mjs|cjs)$/.test(file) || file.endsWith("package.json"))) add("javascript");
-  if (paths.some((file) => /\\.py$/.test(file) || file.includes("requirements.txt"))) add("python");
-  if (paths.some((file) => /\\.go$/.test(file) || file.endsWith("go.mod"))) add("go");
-  if (paths.some((file) => /\\.rs$/.test(file) || file.endsWith("cargo.toml"))) add("rust");
-  if (paths.some((file) => /\\.java$/.test(file) || file.endsWith("pom.xml"))) add("java");
-  if (paths.some((file) => /\\.(cpp|cc|cxx|hpp)$/.test(file) || file.endsWith("cmakelists.txt"))) add("cpp");
-  if (paths.some((file) => /\\.(cs|csproj|sln)$/.test(file))) add("csharp");
-  if (paths.some((file) => /\\.c$/.test(file))) add("c");
-  if (paths.some((file) => /\\.rb$/.test(file) || file.endsWith("gemfile"))) add("ruby");
-  if (paths.some((file) => /\\.php$/.test(file) || file.endsWith("composer.json"))) add("php");
-  if (paths.some((file) => /\\.swift$/.test(file) || file.endsWith("package.swift"))) add("swift");
-  if (paths.some((file) => /\\.(kt|kts)$/.test(file) || file.endsWith("build.gradle"))) add("kotlin");
-  if (paths.some((file) => /\\.dart$/.test(file) || file.endsWith("pubspec.yaml"))) add("dart");
-  if (paths.some((file) => /\\.scala$/.test(file) || file.endsWith("build.sbt"))) add("scala");
-  if (paths.some((file) => /\\.[rR]$/.test(file))) add("r");
-  if (paths.some((file) => /\\.(sql|sqlite)$/.test(file))) add("sql");
-  if (paths.some((file) => file.endsWith(".sh") || file.endsWith("bashrc") || file.endsWith("zshrc"))) add("bash");
+  if (hasExtension([".ts", ".tsx", ".mts", ".cts"])) add("typescript");
+  if (hasExtension([".js", ".jsx", ".mjs", ".cjs"]) || paths.some((file) => file.endsWith("package.json"))) add("javascript");
+  if (hasExtension([".py"]) || paths.some((file) => file.endsWith("requirements.txt") || file.endsWith("pyproject.toml"))) add("python");
+  if (hasExtension([".go"]) || paths.some((file) => file.endsWith("go.mod"))) add("go");
+  if (hasExtension([".rs"]) || paths.some((file) => file.endsWith("cargo.toml"))) add("rust");
+  if (hasExtension([".java"]) || paths.some((file) => file.endsWith("pom.xml"))) add("java");
+  if (hasExtension([".cpp", ".cc", ".cxx", ".hpp"]) || paths.some((file) => file.endsWith("cmakelists.txt"))) add("cpp");
+  if (hasExtension([".cs", ".csproj", ".sln"])) add("csharp");
+  if (hasExtension([".c"])) add("c");
+  if (hasExtension([".rb"]) || paths.some((file) => file.endsWith("gemfile"))) add("ruby");
+  if (hasExtension([".php"]) || paths.some((file) => file.endsWith("composer.json"))) add("php");
+  if (hasExtension([".swift"]) || paths.some((file) => file.endsWith("package.swift"))) add("swift");
+  if (hasExtension([".kt", ".kts"]) || paths.some((file) => file.endsWith("build.gradle"))) add("kotlin");
+  if (hasExtension([".dart"]) || paths.some((file) => file.endsWith("pubspec.yaml"))) add("dart");
+  if (hasExtension([".scala"]) || paths.some((file) => file.endsWith("build.sbt"))) add("scala");
+  if (hasExtension([".r"])) add("r");
+  if (hasExtension([".sql", ".sqlite"])) add("sql");
+  if (hasExtension([".sh"]) || paths.some((file) => file.endsWith("bashrc") || file.endsWith("zshrc"))) add("bash");
   return detected.length ? detected : ["javascript"];
 }
 
@@ -149,7 +150,8 @@ export default function Dashboard() {
   const editorKey = active ? `${lessonKey}:${selectedExplorerFile || "lesson-draft"}` : "";
   const editorValue = editorKey ? editorDrafts[editorKey] ?? selectedRepositoryFile?.content ?? "" : "";
   const consoleOutput = editorKey ? consoleOutputs[editorKey] ?? [] : [];
-  const detectedEditorLanguages = detectEditorLanguages(repositoryFiles.map((file) => file.path));
+  const languageDetectionFiles = repositoryFiles.length ? repositoryFiles.map((file) => file.path) : flatLessons.flatMap((lesson) => lesson.relevantFiles);
+  const detectedEditorLanguages = detectEditorLanguages(languageDetectionFiles);
   const editorLanguage = editorKey ? editorLanguages[editorKey] ?? detectedEditorLanguages[0] : "javascript";
   const explorerSourceEntries = [...repositoryFiles.map((file) => file.path), ...(createdExplorerEntries[courseKey] ?? [])];
   const explorerRows = Array.from(new Set(explorerSourceEntries.flatMap((entry) => {
