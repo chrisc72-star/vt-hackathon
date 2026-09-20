@@ -11,6 +11,11 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 
 const GITHUB_API = "https://api.github.com";
 
+async function getConnectedToken(ctx: { runQuery: (query: any, args: any) => Promise<any> }, userId: Id<"users">) {
+  const connection = await ctx.runQuery(internal.githubConnections.getForUser, { userId });
+  return connection?.accessToken || process.env.GITHUB_TOKEN || "";
+}
+
 function parseGithubUrl(url: string): { owner: string; repo: string } | null {
   const match = url.trim().match(/^https?:\/\/(www\.)?github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/);
   if (!match) return null;
@@ -53,6 +58,25 @@ function selectDigestFiles(tree: TreeItem[]): string[] {
   return [...manifests.slice(0, 6), ...source].slice(0, 30).map((f) => f.path);
 }
 
+export const beginOAuth = action({
+  args: {},
+  handler: async (ctx): Promise<{ url: string }> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Sign in first.");
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    const redirectUri = process.env.GITHUB_OAUTH_REDIRECT_URI;
+    if (!clientId || !redirectUri) throw new Error("GitHub OAuth is not configured. Add GITHUB_CLIENT_ID and GITHUB_OAUTH_REDIRECT_URI in the Keys panel.");
+    const state = crypto.randomUUID();
+    await ctx.runMutation(internal.githubConnections.createOAuthState, { userId, state, expiresAt: Date.now() + 10 * 60 * 1000 });
+    const authUrl = new URL("https://github.com/login/oauth/authorize");
+    authUrl.searchParams.set("client_id", clientId);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("scope", "read:user repo");
+    authUrl.searchParams.set("state", state);
+    return { url: authUrl.toString() };
+  },
+});
+
 export const pushFiles = action({
   args: {
     projectId: v.id("projects"),
@@ -68,8 +92,8 @@ export const pushFiles = action({
     const project: { _id: Id<"projects">; userId: Id<"users">; owner: string; repo: string; defaultBranch?: string } | null = await ctx.runQuery(internal.courses.getProject, { projectId });
     if (!project || project.userId !== userId) throw new Error("You do not have access to this repository.");
 
-    const token = process.env.GITHUB_TOKEN;
-    if (!token) throw new Error("GITHUB_TOKEN is not set. Add it in the Keys panel to enable pushes.");
+    const token = await getConnectedToken(ctx, userId);
+    if (!token) throw new Error("Connect your GitHub account before pushing files.");
     const headers: Record<string, string> = {
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
@@ -120,7 +144,10 @@ export const pushFiles = action({
 export const fetchProjectFile = action({
   args: { owner: v.string(), repo: v.string(), branch: v.optional(v.string()), path: v.string() },
   handler: async (ctx, { owner, repo, branch, path }) => {
-    await getAuthUserId(ctx) ?? (() => { throw new Error("Sign in first."); })();
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Sign in first.");
+    const token = await getConnectedToken(ctx, userId);
+    if (!token) throw new Error("Connect your GitHub account before loading files.");
     const ref = branch || "main";
     const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path.split("/").filter(Boolean).join("/")}`;
     const response = await fetch(rawUrl);
@@ -132,13 +159,16 @@ export const fetchProjectFile = action({
 export const fetchProjectFiles = action({
   args: { owner: v.string(), repo: v.string(), branch: v.optional(v.string()) },
   handler: async (ctx, { owner, repo, branch }): Promise<{ branch: string; commitSha: string; files: RepositoryFileResult[] }> => {
-    await getAuthUserId(ctx) ?? (() => { throw new Error("Sign in first."); })();
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Sign in first.");
+    const token = await getConnectedToken(ctx, userId);
+    if (!token) throw new Error("Connect your GitHub account before loading repositories.");
 
     const headers: Record<string, string> = {
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
+      Authorization: `Bearer ${token}`,
     };
-    if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
 
     const ghFetch = async (path: string) => {
       const res = await fetch(`${GITHUB_API}${path}`, { headers });

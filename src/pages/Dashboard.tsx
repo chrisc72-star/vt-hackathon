@@ -115,11 +115,13 @@ export default function Dashboard() {
   const [isWorkspaceNavMinimized, setIsWorkspaceNavMinimized] = useState(false);
 
   const projects = useQuery(api.courses.myProjects, {}) ?? [];
+  const githubStatus = useQuery(api.githubConnections.getStatus, {});
   const activeProject: Doc<"projects"> | undefined = projects.find((project) => project._id === selectedProjectId) ?? projects[0];
   const course = useQuery(api.courses.latestCourse, activeProject ? { projectId: activeProject._id } : "skip") ?? null;
   const progress = useQuery(api.courses.courseProgress, course ? { courseId: course._id } : "skip") ?? [];
 
   const summarize = useAction(api.generation.summarizeRepo);
+  const beginGithubOAuth = useAction(api.github.beginOAuth);
   const fetchProjectFiles = useAction(api.github.fetchProjectFiles);
   const fetchProjectFile = useAction(api.github.fetchProjectFile);
   const pushFiles = useAction(api.github.pushFiles);
@@ -323,6 +325,15 @@ export default function Dashboard() {
     }
   };
 
+  const handleConnectGithub = async () => {
+    try {
+      const { url } = await beginGithubOAuth({});
+      window.location.assign(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start GitHub connection.");
+    }
+  };
+
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
   const isWorking = isSummarizing || isGenerating;
@@ -373,6 +384,7 @@ export default function Dashboard() {
           <div className="border border-[#d3cfc2] bg-[#fcfaf5] shadow-[8px_8px_0_#e6d4bc]">
             <div className="flex items-center justify-between border-b border-[#e0dbd0] bg-[#f5f0e6] px-5 py-3 font-mono text-[11px] text-[#7a776b]"><span className="flex items-center gap-2"><Github className="size-3.5" /> REPOSITORY CONNECTOR</span><span>step 1 / 2</span></div>
             <form onSubmit={handleAnalyze} className="p-5 sm:p-8">
+              <div className="mb-6 flex flex-col justify-between gap-3 border border-[#d8dfd4] bg-[#eef3e9] p-4 sm:flex-row sm:items-center"><div><p className="font-mono text-[10px] tracking-[.14em] text-[#789071]">GITHUB ACCOUNT</p><p className="mt-1 text-sm text-[#5d6b58]">{githubStatus?.connected ? `Connected as @${githubStatus.login}` : "Connect your account to browse and push your own repositories."}</p></div><Button type="button" onClick={handleConnectGithub} disabled={githubStatus?.connected} className="rounded-sm bg-[#1d3f2c] text-xs text-[#f7ecda] hover:bg-[#2a5a40]">{githubStatus?.connected ? "GitHub connected" : <><Github className="size-3.5" /> Connect GitHub</>}</Button></div>
               <label className="mb-2 block font-mono text-xs font-semibold text-[#5d6b58]">GITHUB REPOSITORY URL</label>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <div className="relative flex-1"><Search className="absolute left-3 top-3.5 size-4 text-[#9a958a]" /><Input value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} placeholder="https://github.com/owner/repository" className="h-12 rounded-sm border-[#d3cfc2] bg-white pl-10 text-sm" disabled={isWorking} /></div>

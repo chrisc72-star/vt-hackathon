@@ -32,6 +32,20 @@ const schema = defineSchema(
       role: v.optional(roleValidator), // role of the user. do not remove
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
+    githubConnections: defineTable({
+      userId: v.id("users"),
+      githubUserId: v.string(),
+      login: v.string(),
+      accessToken: v.string(),
+      connectedAt: v.number(),
+    }).index("by_user", ["userId"]),
+
+    githubOAuthStates: defineTable({
+      state: v.string(),
+      userId: v.id("users"),
+      expiresAt: v.number(),
+    }).index("by_state", ["state"]),
+
     // A GitHub repository connected by a user.
     projects: defineTable({
       userId: v.id("users"),
