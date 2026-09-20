@@ -1,6 +1,7 @@
 "use node";
 
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
+import { randomBytes } from "node:crypto";
 import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
@@ -13,7 +14,9 @@ const GITHUB_API = "https://api.github.com";
 
 async function getConnectedToken(ctx: { runQuery: (query: any, args: any) => Promise<any> }, userId: Id<"users">) {
   const connection = await ctx.runQuery(internal.githubConnections.getForUser, { userId });
-  return connection?.accessToken || process.env.GITHUB_TOKEN || "";
+  // Connections are per Orbit user. Never fall back to a shared token here:
+  // doing so could silently access or push to the wrong GitHub account.
+  return connection?.accessToken || "";
 }
 
 function parseGithubUrl(url: string): { owner: string; repo: string } | null {
@@ -68,8 +71,12 @@ export const beginOAuth = action({
     const redirectUri = process.env.GITHUB_OAUTH_REDIRECT_URI || (process.env.CONVEX_SITE_URL ? `${process.env.CONVEX_SITE_URL}/github/oauth/callback` : "");
     if (!clientId || !clientSecret) throw new Error("GitHub connection is not configured: add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to the Convex Keys panel.");
     if (!redirectUri) throw new Error("GitHub connection is not configured: add GITHUB_OAUTH_REDIRECT_URI to the Convex Keys panel. It must be https://<deployment>.convex.site/github/oauth/callback (not the .convex.cloud URL).");
-    const state = `${Date.now().toString(36)}-${Array.from(crypto.getRandomValues(new Uint8Array(24)), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
-    await ctx.runMutation(internal.githubConnections.createOAuthState, { userId, state, expiresAt: Date.now() + 10 * 60 * 1000 });
+    const state = `${Date.now().toString(36)}-${randomBytes(24).toString("hex")}`;
+    try {
+      await ctx.runMutation(internal.githubConnections.createOAuthState, { userId, state, expiresAt: Date.now() + 10 * 60 * 1000 });
+    } catch {
+      throw new ConvexError("Could not start GitHub connection. The OAuth state could not be saved. Refresh Orbit and try again.");
+    }
     let authUrl: URL;
     try {
       authUrl = new URL("https://github.com/login/oauth/authorize");
@@ -113,7 +120,13 @@ export const pushFiles = action({
       const response = await fetch(`${GITHUB_API}${path}`, { ...options, headers: { ...headers, ...(options?.headers ?? {}) } });
       if (!response.ok) {
         const detail = (await response.text()).slice(0, 500);
-        throw new Error(`GitHub push failed (${response.status}): ${detail}`);
+        if (response.status === 403) {
+          throw new ConvexError("GitHub denied this push (403). Install the Orbit GitHub App on the connected account, select this repository, and grant Contents: Read and write permission, then reconnect GitHub.");
+        }
+        if (response.status === 404) {
+          throw new ConvexError("GitHub could not find this repository or branch for the connected account. Confirm the GitHub App is installed on this repository and reconnect GitHub.");
+        }
+        throw new ConvexError(`GitHub push failed (${response.status}): ${detail}`);
       }
       return response.json();
     };
@@ -158,10 +171,24 @@ export const fetchProjectFile = action({
     const token = await getConnectedToken(ctx, userId);
     if (!token) throw new Error("Connect your GitHub account before loading files.");
     const ref = branch || "main";
-    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path.split("/").filter(Boolean).join("/")}`;
-    const response = await fetch(rawUrl);
-    if (!response.ok) throw new Error(`Could not load ${path} from GitHub (${response.status}).`);
-    return { path, content: (await response.text()).slice(0, 50000), readable: true };
+    const apiPath = path.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+    const response = await fetch(`${GITHUB_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${apiPath}?ref=${encodeURIComponent(ref)}`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+    if (!response.ok) {
+      if (response.status === 403) throw new ConvexError("GitHub denied file access. Install the Orbit GitHub App on this account and grant it access to this repository.");
+      if (response.status === 404) throw new ConvexError(`GitHub could not find ${path}. Confirm the connected account's App installation includes this repository.`);
+      throw new ConvexError(`Could not load ${path} from GitHub (${response.status}).`);
+    }
+    const file = await response.json();
+    if (Array.isArray(file) || file.type !== "file" || typeof file.content !== "string") {
+      return { path, content: "", readable: false };
+    }
+    return { path, content: Buffer.from(file.content.replaceAll("\\n", ""), "base64").toString("utf8").slice(0, 50000), readable: true };
   },
 });
 
@@ -182,9 +209,9 @@ export const fetchProjectFiles = action({
     const ghFetch = async (path: string) => {
       const res = await fetch(`${GITHUB_API}${path}`, { headers });
       if (!res.ok) {
-        if (res.status === 404) throw new Error(`Repository not found: ${owner}/${repo}.`);
-        if (res.status === 403) throw new Error("GitHub API rate limit reached. Try again in a few minutes.");
-        throw new Error(`GitHub API error (${res.status}) fetching ${path}`);
+        if (res.status === 404) throw new ConvexError(`Repository not found or not installed for this GitHub account: ${owner}/${repo}. Install Orbit on this repository, then reconnect GitHub.`);
+        if (res.status === 403) throw new ConvexError("GitHub denied repository access. Install the Orbit GitHub App on this account, select this repository, and grant Contents: Read and write permission.");
+        throw new ConvexError(`GitHub API error (${res.status}) fetching ${path}`);
       }
       return res.json();
     };
@@ -227,9 +254,9 @@ export const fetchRepo = internalAction({
     const ghFetch = async (path: string) => {
       const res = await fetch(`${GITHUB_API}${path}`, { headers });
       if (!res.ok) {
-        if (res.status === 404) throw new Error(`Repository not found: ${owner}/${repo}. Check the URL and make sure the repo is public.`);
-        if (res.status === 403) throw new Error("GitHub API rate limit reached. Try again in a few minutes.");
-        throw new Error(`GitHub API error (${res.status}) fetching ${path}`);
+        if (res.status === 404) throw new ConvexError(`Repository not found or not installed for this GitHub account: ${owner}/${repo}. Install Orbit on this repository, then reconnect GitHub.`);
+        if (res.status === 403) throw new ConvexError("GitHub denied repository access. Install the Orbit GitHub App on this account, select this repository, and grant Contents: Read and write permission.");
+        throw new ConvexError(`GitHub API error (${res.status}) fetching ${path}`);
       }
       return res.json();
     };
@@ -272,7 +299,7 @@ export const fetchRepo = internalAction({
       try {
         for (const ref of rawRefs) {
           const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path}`;
-          const res = await fetch(rawUrl);
+          const res = await fetch(rawUrl, { headers: { Authorization: `Bearer ${token}` } });
           if (res.ok) {
             digestFiles.push({ path, content: (await res.text()).slice(0, 8192) });
             break;
