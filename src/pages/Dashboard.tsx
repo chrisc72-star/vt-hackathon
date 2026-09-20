@@ -342,10 +342,21 @@ export default function Dashboard() {
   };
 
   const handleConnectGithub = async () => {
+    // Open a tab synchronously so browser popup protection does not block the
+    // OAuth page after the asynchronous Convex request completes. GitHub also
+    // refuses to render its authorization page inside the embedded preview.
+    const authWindow = window.open("about:blank", "orbit-github-auth");
+    if (!authWindow) {
+      setError("Your browser blocked the GitHub authorization tab. Allow pop-ups for Orbit and try again.");
+      return;
+    }
+
     try {
       const { url } = await beginGithubOAuth({});
-      window.location.assign(url);
+      authWindow.location.href = url;
+      authWindow.focus();
     } catch (err) {
+      authWindow.close();
       setError(err instanceof Error ? err.message : "Could not start GitHub connection. Confirm GitHub OAuth keys and the Convex callback URL.");
     }
   };
