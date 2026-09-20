@@ -23,6 +23,12 @@ interface TreeItem {
   size?: number;
 }
 
+interface RepositoryFileResult {
+  path: string;
+  content: string;
+  readable: boolean;
+}
+
 // Pick a representative digest of the repo: config/manifests first, then the
 // largest source files, capped so the LLM prompt stays affordable.
 function selectDigestFiles(tree: TreeItem[]): string[] {
@@ -111,9 +117,21 @@ export const pushFiles = action({
   },
 });
 
+export const fetchProjectFile = action({
+  args: { owner: v.string(), repo: v.string(), branch: v.optional(v.string()), path: v.string() },
+  handler: async (ctx, { owner, repo, branch, path }) => {
+    await getAuthUserId(ctx) ?? (() => { throw new Error("Sign in first."); })();
+    const ref = branch || "main";
+    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path.split("/").filter(Boolean).join("/")}`;
+    const response = await fetch(rawUrl);
+    if (!response.ok) throw new Error(`Could not load ${path} from GitHub (${response.status}).`);
+    return { path, content: (await response.text()).slice(0, 50000), readable: true };
+  },
+});
+
 export const fetchProjectFiles = action({
   args: { owner: v.string(), repo: v.string(), branch: v.optional(v.string()) },
-  handler: async (ctx, { owner, repo, branch }) => {
+  handler: async (ctx, { owner, repo, branch }): Promise<{ branch: string; commitSha: string; files: RepositoryFileResult[] }> => {
     await getAuthUserId(ctx) ?? (() => { throw new Error("Sign in first."); })();
 
     const headers: Record<string, string> = {
@@ -142,19 +160,9 @@ export const fetchProjectFiles = action({
       .slice(0, 400)
       .map((item: TreeItem) => item.path);
 
-    const files = await Promise.all(paths.map(async (path: string) => {
-      try {
-        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${commitSha}/${path}`;
-        const res = await fetch(rawUrl);
-        if (!res.ok) return { path, content: "", readable: false };
-        const content = await res.text();
-        // Keep binary assets visible in the tree but do not put them in the editor.
-        if (content.includes("\u0000")) return { path, content: "", readable: false };
-        return { path, content: content.slice(0, 50000), readable: true };
-      } catch {
-        return { path, content: "", readable: false };
-      }
-    }));
+    // Return the tree immediately. File contents are fetched lazily when a learner selects a file,
+    // so a large repository never delays or times out the explorer itself.
+    const files = paths.map((path: string) => ({ path, content: "", readable: true }));
 
     return { branch: resolvedBranch, commitSha, files };
   },
