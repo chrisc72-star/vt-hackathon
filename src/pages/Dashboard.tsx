@@ -7,7 +7,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleDot, Code2, FileCode2, Flame, Github, GitBranch, Home, Layers3, Loader2, LogOut, PanelLeftClose, PanelLeftOpen, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleDot, Code2, FileCode2, Flame, Github, GitBranch, Home, Layers3, Loader2, LogOut, PanelLeftClose, PanelLeftOpen, Play, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
@@ -55,9 +55,37 @@ export default function Dashboard() {
     : [];
   const [activeIdx, setActiveIdx] = useState(0);
   const [editorDrafts, setEditorDrafts] = useState<Record<string, string>>({});
+  const [consoleOutputs, setConsoleOutputs] = useState<Record<string, string[]>>({});
   const active = flatLessons[Math.min(activeIdx, Math.max(flatLessons.length - 1, 0))];
   const editorKey = active ? `${course?._id ?? "course"}:${active.moduleIndex}:${active.lessonIndex}` : "";
   const editorValue = editorKey ? editorDrafts[editorKey] ?? "" : "";
+  const consoleOutput = editorKey ? consoleOutputs[editorKey] ?? [] : [];
+
+  const runEditorCode = () => {
+    if (!editorKey) return;
+    const output: string[] = [];
+    const formatValue = (value: unknown) => {
+      if (typeof value === "string") return value;
+      try { return JSON.stringify(value, null, 2); } catch { return String(value); }
+    };
+    const lessonConsole = {
+      log: (...values: unknown[]) => output.push(...values.map(formatValue)),
+      info: (...values: unknown[]) => output.push(...values.map(formatValue)),
+      warn: (...values: unknown[]) => output.push(`WARN: ${values.map(formatValue).join(" ")}`),
+      error: (...values: unknown[]) => output.push(`ERROR: ${values.map(formatValue).join(" ")}`),
+    };
+    try {
+      if (!editorValue.trim()) {
+        output.push("Nothing to run. Add JavaScript to the editor first.");
+      } else {
+        new Function("console", editorValue)(lessonConsole);
+        if (output.length === 0) output.push("Process finished with no console output.");
+      }
+    } catch (err) {
+      output.push(`ERROR: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    setConsoleOutputs((outputs) => ({ ...outputs, [editorKey]: output }));
+  };
 
   const handleAnalyze = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -237,11 +265,15 @@ export default function Dashboard() {
                   </div>
                   <div className="mt-6 border border-[#cfcabc] bg-[#202a22] shadow-[5px_5px_0_#e6d4bc]">
                     <div className="flex flex-col gap-3 border-b border-[#405044] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-2"><Code2 className="size-4 text-[#d97b2b]" /><span className="font-mono text-[10px] tracking-[.14em] text-[#e8e2d4]">LESSON WORKSPACE</span><span className="hidden font-mono text-[10px] text-[#8fa18c] sm:inline">// write your solution here</span></div>
-                      <button type="button" onClick={() => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: "" })); }} className="self-start font-mono text-[10px] text-[#b9c8ad] hover:text-[#f3d3a7] sm:self-auto">clear draft</button>
+                      <div className="flex items-center gap-2"><Code2 className="size-4 text-[#d97b2b]" /><span className="font-mono text-[10px] tracking-[.14em] text-[#e8e2d4]">LESSON WORKSPACE</span><span className="hidden font-mono text-[10px] text-[#8fa18c] sm:inline">// write JavaScript here</span></div>
+                      <div className="flex items-center gap-3 self-start sm:self-auto"><button type="button" onClick={runEditorCode} className="inline-flex items-center gap-1.5 bg-[#d97b2b] px-3 py-1.5 font-mono text-[10px] font-semibold text-[#202a22] transition-colors hover:bg-[#f0a15d]"><Play className="size-3" /> Run</button><button type="button" onClick={() => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: "" })); }} className="font-mono text-[10px] text-[#b9c8ad] hover:text-[#f3d3a7]">clear draft</button></div>
                     </div>
-                    <textarea value={editorValue} onChange={(event) => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: event.target.value })); }} placeholder={`// Try the exercise for “${active.title}”\n// Start writing your code here...`} spellCheck={false} className="min-h-56 w-full resize-y border-0 bg-[#182019] px-4 py-4 font-mono text-xs leading-6 text-[#d8e4d2] outline-none placeholder:text-[#6f8270] focus:ring-2 focus:ring-inset focus:ring-[#d97b2b]" />
+                    <textarea value={editorValue} onChange={(event) => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: event.target.value })); }} placeholder={`// Try the exercise for “${active.title}”\n// Start writing your JavaScript here...`} spellCheck={false} className="min-h-56 w-full resize-y border-0 bg-[#182019] px-4 py-4 font-mono text-xs leading-6 text-[#d8e4d2] outline-none placeholder:text-[#6f8270] focus:ring-2 focus:ring-inset focus:ring-[#d97b2b]" />
                     <div className="border-t border-[#405044] px-4 py-2 font-mono text-[10px] text-[#8fa18c]">draft saved locally for this lesson · {editorValue.split("\n").length} lines</div>
+                    <div className="border-t border-[#405044] bg-[#101610] px-4 py-3 font-mono text-xs text-[#d8e4d2]">
+                      <div className="mb-2 flex items-center justify-between text-[10px] tracking-[.14em] text-[#8fa18c]"><span>CONSOLE</span><button type="button" onClick={() => { if (editorKey) setConsoleOutputs((outputs) => ({ ...outputs, [editorKey]: [] })); }} className="tracking-normal text-[#b9c8ad] hover:text-[#f3d3a7]">clear console</button></div>
+                      <pre className="max-h-48 min-h-10 overflow-auto whitespace-pre-wrap leading-5">{consoleOutput.length ? consoleOutput.join("\n") : "Run your code to see output here."}</pre>
+                    </div>
                   </div>
                   <div className="mt-8 flex flex-col justify-between gap-3 border-t border-[#e2ddd1] pt-5 sm:flex-row sm:items-center">
                     <label className="flex items-center gap-2 text-xs text-[#6d6a5e]"><input type="checkbox" checked={completed.has(`${active.moduleIndex}:${active.lessonIndex}`)} onChange={async () => { await toggleComplete({ courseId: course._id, moduleIndex: active.moduleIndex, lessonIndex: active.lessonIndex }); }} className="size-4 accent-[#1d3f2c]" /> Mark this lesson complete</label>
