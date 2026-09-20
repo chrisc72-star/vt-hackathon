@@ -102,7 +102,8 @@ const schema = defineSchema(
       lessonIndex: v.number(),
       completedAt: v.number(),
     })
-      .index("by_user_and_course", ["userId", "courseId"]),
+      .index("by_user_and_course", ["userId", "courseId"])
+      .index("by_user_and_completed_at", ["userId", "completedAt"]),
 
     // Daily server-side quota for lesson help. Reservations prevent concurrent
     // requests from bypassing the message/token caps.

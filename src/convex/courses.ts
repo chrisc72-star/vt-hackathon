@@ -165,6 +165,18 @@ export const courseProgress = query({
   },
 });
 
+export const activityHistory = query({
+  args: { since: v.number() },
+  handler: async (ctx, { since }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    return ctx.db
+      .query("lessonProgress")
+      .withIndex("by_user_and_completed_at", (q) => q.eq("userId", userId).gte("completedAt", since))
+      .collect();
+  },
+});
+
 export const toggleLessonComplete = mutation({
   args: { courseId: v.id("courses"), moduleIndex: v.number(), lessonIndex: v.number() },
   handler: async (ctx, { courseId, moduleIndex, lessonIndex }) => {

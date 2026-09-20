@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LessonChat } from "@/components/LessonChat";
+import { StreakPanel } from "@/components/StreakPanel";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleDot, FileCode2, Github, GitBranch, Home, Layers3, Loader2, LogOut, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleDot, FileCode2, Flame, Github, GitBranch, Home, Layers3, Loader2, LogOut, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
@@ -28,7 +29,7 @@ export default function Dashboard() {
   const [skill, setSkill] = useState<Skill | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<Id<"projects"> | null>(null);
   const [creatingNewCourse, setCreatingNewCourse] = useState(false);
-  const [workspaceTab, setWorkspaceTab] = useState<"today" | "lessons">("today");
+  const [workspaceTab, setWorkspaceTab] = useState<"today" | "lessons" | "streak">("today");
   const [error, setError] = useState("");
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -95,6 +96,7 @@ export default function Dashboard() {
             <p className="px-3 py-3 font-mono text-[10px] font-semibold tracking-[.16em] text-[#8a867a]">WORKSPACE</p>
             <button onClick={() => setWorkspaceTab("today")} className={`flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-sm font-semibold transition-colors ${workspaceTab === "today" ? "bg-[#fbeede] text-[#a85416]" : "text-[#6d6a5e] hover:bg-[#f5f0e6]"}`}><Home className="size-4" /> Today</button>
             <button onClick={() => setWorkspaceTab("lessons")} className={`flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-sm font-semibold transition-colors ${workspaceTab === "lessons" ? "bg-[#fbeede] text-[#a85416]" : "text-[#6d6a5e] hover:bg-[#f5f0e6]"}`}><BookOpen className="size-4" /> Lessons</button>
+            <button onClick={() => setWorkspaceTab("streak")} className={`flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-sm font-semibold transition-colors ${workspaceTab === "streak" ? "bg-[#fbeede] text-[#a85416]" : "text-[#6d6a5e] hover:bg-[#f5f0e6]"}`}><Flame className="size-4" /> Streak</button>
             <Link to="/settings" className="flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-sm font-semibold text-[#6d6a5e] transition-colors hover:bg-[#f5f0e6]"><SettingsIcon className="size-4" /> Settings</Link>
             <div className="mt-4 border-t border-[#e0dbd0] pt-4"><p className="px-3 font-mono text-[10px] text-[#8a867a]">PROGRESS</p><p className="mt-2 px-3 font-serif text-2xl font-semibold">{totalLessons ? Math.round((completed.size / totalLessons) * 100) : 0}%</p><div className="mx-3 mt-2 h-1 bg-[#e8e2d4]"><div className="h-full bg-[#d97b2b]" style={{ width: `${totalLessons ? (completed.size / totalLessons) * 100 : 0}%` }} /></div></div>
           </div>
@@ -105,6 +107,7 @@ export default function Dashboard() {
           <div className="mb-6 flex gap-2 overflow-x-auto lg:hidden">
             <button onClick={() => setWorkspaceTab("today")} className={`flex shrink-0 items-center gap-2 rounded-sm border px-4 py-2 text-xs font-semibold ${workspaceTab === "today" ? "border-[#d97b2b] bg-[#fbeede] text-[#a85416]" : "border-[#e0dbd0] bg-[#fcfaf5] text-[#6d6a5e]"}`}><Home className="size-3.5" /> Today</button>
             <button onClick={() => setWorkspaceTab("lessons")} className={`flex shrink-0 items-center gap-2 rounded-sm border px-4 py-2 text-xs font-semibold ${workspaceTab === "lessons" ? "border-[#d97b2b] bg-[#fbeede] text-[#a85416]" : "border-[#e0dbd0] bg-[#fcfaf5] text-[#6d6a5e]"}`}><BookOpen className="size-3.5" /> Lessons</button>
+            <button onClick={() => setWorkspaceTab("streak")} className={`flex shrink-0 items-center gap-2 rounded-sm border px-4 py-2 text-xs font-semibold ${workspaceTab === "streak" ? "border-[#d97b2b] bg-[#fbeede] text-[#a85416]" : "border-[#e0dbd0] bg-[#fcfaf5] text-[#6d6a5e]"}`}><Flame className="size-3.5" /> Streak</button>
             <Link to="/settings" className="flex shrink-0 items-center gap-2 rounded-sm border border-[#e0dbd0] bg-[#fcfaf5] px-4 py-2 text-xs font-semibold text-[#6d6a5e]"><SettingsIcon className="size-3.5" /> Settings</Link>
           </div>
         )}
@@ -149,6 +152,8 @@ export default function Dashboard() {
           </div>
           <div className="mt-6 border border-[#ddd6c9] bg-[#fcfaf5] p-6"><div className="flex items-center justify-between"><div><p className="font-mono text-[10px] tracking-[.16em] text-[#8a867a]">ALL LESSONS</p><h2 className="mt-2 font-serif text-2xl font-semibold">Your learning path</h2></div><button onClick={() => setWorkspaceTab("lessons")} className="font-mono text-[11px] text-[#a85416] hover:text-[#c2571a]">open lessons →</button></div><div className="mt-5 grid gap-2 sm:grid-cols-2">{flatLessons.map((lesson) => <button key={`${lesson.moduleIndex}-${lesson.lessonIndex}`} onClick={() => { setActiveIdx(flatLessons.indexOf(lesson)); setWorkspaceTab("lessons"); }} className="flex items-center gap-3 border border-[#e5e0d6] p-3 text-left transition-colors hover:border-[#d97b2b] hover:bg-[#fbeede]"><span className={`font-mono text-xs ${completed.has(`${lesson.moduleIndex}:${lesson.lessonIndex}`) ? "text-[#1d3f2c]" : "text-[#9a958a]"}`}>{completed.has(`${lesson.moduleIndex}:${lesson.lessonIndex}`) ? "✓" : String(flatLessons.indexOf(lesson) + 1).padStart(2, "0")}</span><span className="truncate text-xs font-semibold">{lesson.title}</span><ChevronRight className="ml-auto size-3.5 text-[#9a958a]" /></button>)}</div></div>
         </motion.div>
+      ) : workspaceTab === "streak" ? (
+        <motion.div key="streak" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-5xl"><StreakPanel /></motion.div>
       ) : (
         <motion.div key="course" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid gap-8 lg:grid-cols-[280px_1fr] lg:items-start">
           <aside className="border border-[#cfcabc] bg-[#fcfaf5] lg:sticky lg:top-6">
