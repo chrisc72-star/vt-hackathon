@@ -82,7 +82,7 @@ function OrbitDiagram() {
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="absolute left-1/2 top-1/2 z-10 size-[36%] -translate-x-1/2 -translate-y-1/2"
+        className="absolute left-1/2 top-1/2 z-10 size-[32%] -translate-x-1/2 -translate-y-1/2"
       >
         <div className="absolute inset-0 rounded-full bg-[#b7cfae]/50 blur-xl" />
         <div className="relative flex size-full items-center justify-center rounded-full bg-[#28352b] shadow-[0_18px_40px_-12px_rgba(40,53,43,0.35)]">
