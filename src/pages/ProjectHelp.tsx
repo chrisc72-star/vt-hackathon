@@ -10,14 +10,14 @@ const steps = [
   },
   {
     number: "02",
-    title: "Choose a starter project",
-    description: "Create a small project you care about — a to-do list, portfolio, or API is more than enough for your first course.",
+    title: "Create a repository",
+    description: "On GitHub, click the + menu, choose ‘New repository’, give it a name, and select ‘Add a README file’ so it has a first file.",
     icon: BookOpen,
   },
   {
     number: "03",
-    title: "Upload it to GitHub",
-    description: "Use GitHub’s ‘Add file’ button to upload your project files. Keep the repository public so Orbit can read it in v1.",
+    title: "Copy the repository link",
+    description: "Open your new repository, copy its URL from the browser, and paste it into Orbit’s repository upload page. Keep it public so Orbit can read it in v1.",
     icon: GitBranch,
   },
 ];
