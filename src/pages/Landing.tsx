@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, Check, GitBranch, Github, Sparkle, Terminal } from "lucide-react";
 import { Link } from "react-router";
+import logoUrl from "@/assets/orbit_logo_orange.png";
 
 // Elliptical orbits, tilted and rotating slowly, each carrying a small dot.
 // Kept inside the SVG viewport after tilt so no ring clips at the edges.
@@ -128,7 +129,7 @@ export default function Landing() {
     <main className="min-h-screen overflow-hidden bg-[#faf8f2] text-[#1f231c]">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-10">
         <Link to="/" className="flex items-center gap-3 text-sm font-semibold tracking-tight">
-          <img src="/orbit_logo_orange.svg" alt="Orbit" className="h-10 w-auto max-w-[150px] object-contain object-left" />
+          <img src={logoUrl} alt="Orbit" className="h-10 w-auto max-w-[150px] object-contain object-left" />
         </Link>
         <div className="flex items-center gap-3 font-mono text-xs">
           <span className="hidden items-center gap-2 text-[#6d6a5e] sm:flex">
@@ -213,7 +214,7 @@ export default function Landing() {
       <section className="mx-auto grid max-w-7xl gap-10 px-6 py-20 lg:grid-cols-[1fr_auto] lg:items-center lg:px-10">
         <div>
           <div className="flex items-center gap-2 font-mono text-xs text-[#b06a2a]">
-            <img src="/orbit_logo_orange.svg" alt="Orbit" className="h-4 w-auto max-w-[58px] object-contain object-left" /> BUILT FOR LEARNING IN PUBLIC
+            <img src={logoUrl} alt="Orbit" className="h-4 w-auto max-w-[58px] object-contain object-left" /> BUILT FOR LEARNING IN PUBLIC
           </div>
           <h2 className="mt-4 max-w-2xl font-serif text-4xl font-semibold leading-tight tracking-[-.02em] sm:text-5xl">
             Your project is the textbook. Your commits are the proof.

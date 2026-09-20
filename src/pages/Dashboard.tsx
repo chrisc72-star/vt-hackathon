@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleDot, Code2, FileCode2, FilePlus2, Flame, Folder, FolderPlus, Github, GitBranch, Home, Layers3, Loader2, LogOut, PanelLeftClose, PanelLeftOpen, Play, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
+import logoUrl from "@/assets/orbit_logo_orange.png";
 
 type Skill = "beginner" | "intermediate" | "advanced";
 type RepositoryFile = { path: string; content: string; readable: boolean };
@@ -366,7 +367,7 @@ export default function Dashboard() {
   const isWorking = isSummarizing || isGenerating;
 
   return <main className="orbit-workspace min-h-screen bg-[#faf8f2] text-[#1f231c]">
-    <header className="border-b border-[#e0dbd0] bg-[#fcfaf5]"><div className="mx-auto flex max-w-[1400px] items-center justify-between px-5 py-4 lg:px-8"><div className="flex items-center gap-3"><img src="/orbit_logo_orange.svg" alt="Orbit" className="h-9 w-auto max-w-[140px] object-contain object-left" /><span className="hidden border-l border-[#e2ddd1] pl-3 font-mono text-[10px] text-[#8a867a] sm:block">STUDENT WORKSPACE</span></div><div className="flex items-center gap-4"><Link to="/settings" className="flex items-center gap-2 text-xs text-[#6d6a5e] transition-colors hover:text-[#1d3f2c]"><SettingsIcon className="size-3.5" /> <span className="hidden sm:inline">settings</span></Link><span className="hidden text-xs text-[#7a776b] sm:block">{user?.email ?? "student@workspace"}</span><button onClick={handleSignOut} className="flex items-center gap-2 text-xs text-[#6d6a5e] hover:text-[#1d3f2c]"><LogOut className="size-3.5" /> <span className="hidden sm:inline">sign out</span></button></div></div></header>
+    <header className="border-b border-[#e0dbd0] bg-[#fcfaf5]"><div className="mx-auto flex max-w-[1400px] items-center justify-between px-5 py-4 lg:px-8"><div className="flex items-center gap-3"><img src={logoUrl} alt="Orbit" className="h-9 w-auto max-w-[140px] object-contain object-left" /><span className="hidden border-l border-[#e2ddd1] pl-3 font-mono text-[10px] text-[#8a867a] sm:block">STUDENT WORKSPACE</span></div><div className="flex items-center gap-4"><Link to="/settings" className="flex items-center gap-2 text-xs text-[#6d6a5e] transition-colors hover:text-[#1d3f2c]"><SettingsIcon className="size-3.5" /> <span className="hidden sm:inline">settings</span></Link><span className="hidden text-xs text-[#7a776b] sm:block">{user?.email ?? "student@workspace"}</span><button onClick={handleSignOut} className="flex items-center gap-2 text-xs text-[#6d6a5e] hover:text-[#1d3f2c]"><LogOut className="size-3.5" /> <span className="hidden sm:inline">sign out</span></button></div></div></header>
 
     <div className="mx-auto flex max-w-[1400px] gap-6 px-5 py-8 lg:px-8 lg:py-10">
       {course && !creatingNewCourse && (

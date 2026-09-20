@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ArrowLeft, Check, LogOut, Mail, Moon, Palette, ShieldCheck, Sun, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import logoUrl from "@/assets/orbit_logo_orange.png";
 
 type Theme = "light" | "dark";
 
@@ -45,7 +46,7 @@ export default function Settings() {
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 lg:px-8">
           <Link to="/dashboard" className="flex items-center gap-3">
-            <img src="/orbit_logo_orange.svg" alt="Orbit" className="h-9 w-auto max-w-[140px] object-contain object-left" />
+            <img src={logoUrl} alt="Orbit" className="h-9 w-auto max-w-[140px] object-contain object-left" />
           </Link>
           <div className="flex items-center gap-4">
             <span className="hidden text-xs text-muted-foreground sm:block">{user?.email ?? "student@workspace"}</span>
