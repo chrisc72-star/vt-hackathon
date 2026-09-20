@@ -330,7 +330,7 @@ export default function Dashboard() {
       const { url } = await beginGithubOAuth({});
       window.location.assign(url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start GitHub connection.");
+      setError(err instanceof Error ? err.message : "Could not start GitHub connection. Check the GitHub OAuth keys in the Convex Keys panel.");
     }
   };
 
