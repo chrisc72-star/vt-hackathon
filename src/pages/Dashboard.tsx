@@ -7,7 +7,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleDot, FileCode2, Flame, Github, GitBranch, Home, Layers3, Loader2, LogOut, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleDot, Code2, FileCode2, Flame, Github, GitBranch, Home, Layers3, Loader2, LogOut, PanelLeftClose, PanelLeftOpen, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState("");
+  const [isLessonNavMinimized, setIsLessonNavMinimized] = useState(false);
 
   const projects = useQuery(api.courses.myProjects, {}) ?? [];
   const activeProject: Doc<"projects"> | undefined = projects.find((project) => project._id === selectedProjectId) ?? projects[0];
@@ -52,7 +53,10 @@ export default function Dashboard() {
     ? course.modules.flatMap((m, mi) => m.lessons.map((l, li) => ({ ...l, moduleIndex: mi, lessonIndex: li, moduleTitle: m.title })))
     : [];
   const [activeIdx, setActiveIdx] = useState(0);
+  const [editorDrafts, setEditorDrafts] = useState<Record<string, string>>({});
   const active = flatLessons[Math.min(activeIdx, Math.max(flatLessons.length - 1, 0))];
+  const editorKey = active ? `${course?._id ?? "course"}:${active.moduleIndex}:${active.lessonIndex}` : "";
+  const editorValue = editorKey ? editorDrafts[editorKey] ?? "" : "";
 
   const handleAnalyze = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -156,8 +160,12 @@ export default function Dashboard() {
       ) : workspaceTab === "streak" ? (
         <motion.div key="streak" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-5xl"><StreakPanel /></motion.div>
       ) : (
-        <motion.div key="course" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid gap-8 lg:grid-cols-[280px_1fr] lg:items-start">
-          <aside className="border border-[#cfcabc] bg-[#fcfaf5] lg:sticky lg:top-6">
+        <motion.div key="course" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`grid gap-8 lg:items-start ${isLessonNavMinimized ? "lg:grid-cols-[52px_1fr]" : "lg:grid-cols-[280px_1fr]"}`}>
+          <aside className={`border border-[#cfcabc] bg-[#fcfaf5] lg:sticky lg:top-6 ${isLessonNavMinimized ? "p-2" : ""}`}>
+            <button type="button" onClick={() => setIsLessonNavMinimized((value) => !value)} className="hidden w-full items-center justify-center border-b border-[#e0dbd0] bg-[#f5f0e6] p-3 text-[#6d6a5e] transition-colors hover:text-[#1d3f2c] lg:flex" aria-label={isLessonNavMinimized ? "Expand lesson navigation" : "Minimize lesson navigation"} title={isLessonNavMinimized ? "Expand lesson navigation" : "Minimize lesson navigation"}>
+              {isLessonNavMinimized ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+            </button>
+            <div className={isLessonNavMinimized ? "hidden" : "block"}>
             <div className="border-b border-[#e0dbd0] bg-[#f5f0e6] p-5">
               <p className="font-mono text-[10px] text-[#7a776b]">YOUR GENERATED COURSE</p>
               <h2 className="mt-2 break-words font-serif text-xl font-semibold">{course.title}</h2>
@@ -188,6 +196,7 @@ export default function Dashboard() {
               ))}
             </div>
             <div className="border-t border-[#e0dbd0] p-4"><button onClick={() => { if (projects.length >= 2) { setError("You can have up to 2 courses. Remove an existing course before adding another."); return; } setCreatingNewCourse(true); setRepoUrl(""); setSkill(null); setError(""); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="flex items-center gap-2 text-[11px] text-[#7a776b] hover:text-[#1d3f2c]"><Upload className="size-3.5" /> {projects.length >= 2 ? "Course limit reached (2/2)" : "New course from another repo"}</button></div>
+            </div>
           </aside>
           <section>
             <div className="mb-8 flex flex-col justify-between gap-4 border-b border-[#e0dbd0] pb-6 sm:flex-row sm:items-end">
@@ -217,6 +226,14 @@ export default function Dashboard() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="border border-[#e0dbd0] p-4"><div className="flex items-center gap-2 text-xs font-semibold"><BookOpen className="size-4 text-[#1d3f2c]" /> CONCEPT</div><p className="mt-3 text-sm leading-6 text-[#6d6a5e]">{active.concept}</p></div>
                     <div className="border border-[#e0dbd0] p-4"><div className="flex items-center gap-2 text-xs font-semibold"><GitBranch className="size-4 text-[#1d3f2c]" /> EXERCISE</div><p className="mt-3 text-sm leading-6 text-[#6d6a5e]">{active.exercise}</p>{active.relevantFiles.length > 0 && <div className="mt-3 border-t border-[#e0dbd0] pt-3"><p className="font-mono text-[10px] text-[#8a867a]">FILES TO EXPLORE</p><ul className="mt-1 space-y-0.5">{active.relevantFiles.slice(0, 5).map((f) => <li key={f} className="truncate font-mono text-[10px] text-[#5d6b58]">→ {f}</li>)}</ul></div>}</div>
+                  </div>
+                  <div className="mt-6 border border-[#cfcabc] bg-[#202a22] shadow-[5px_5px_0_#e6d4bc]">
+                    <div className="flex flex-col gap-3 border-b border-[#405044] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-2"><Code2 className="size-4 text-[#d97b2b]" /><span className="font-mono text-[10px] tracking-[.14em] text-[#e8e2d4]">LESSON WORKSPACE</span><span className="hidden font-mono text-[10px] text-[#8fa18c] sm:inline">// write your solution here</span></div>
+                      <button type="button" onClick={() => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: "" })); }} className="self-start font-mono text-[10px] text-[#b9c8ad] hover:text-[#f3d3a7] sm:self-auto">clear draft</button>
+                    </div>
+                    <textarea value={editorValue} onChange={(event) => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: event.target.value })); }} placeholder={`// Try the exercise for “${active.title}”\n// Start writing your code here...`} spellCheck={false} className="min-h-56 w-full resize-y border-0 bg-[#182019] px-4 py-4 font-mono text-xs leading-6 text-[#d8e4d2] outline-none placeholder:text-[#6f8270] focus:ring-2 focus:ring-inset focus:ring-[#d97b2b]" />
+                    <div className="border-t border-[#405044] px-4 py-2 font-mono text-[10px] text-[#8fa18c]">draft saved locally for this lesson · {editorValue.split("\n").length} lines</div>
                   </div>
                   <div className="mt-8 flex flex-col justify-between gap-3 border-t border-[#e2ddd1] pt-5 sm:flex-row sm:items-center">
                     <label className="flex items-center gap-2 text-xs text-[#6d6a5e]"><input type="checkbox" checked={completed.has(`${active.moduleIndex}:${active.lessonIndex}`)} onChange={async () => { await toggleComplete({ courseId: course._id, moduleIndex: active.moduleIndex, lessonIndex: active.lessonIndex }); }} className="size-4 accent-[#1d3f2c]" /> Mark this lesson complete</label>
