@@ -32,12 +32,77 @@ const schema = defineSchema(
       role: v.optional(roleValidator), // role of the user. do not remove
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
-    // add other tables here
+    // A GitHub repository connected by a user.
+    projects: defineTable({
+      userId: v.id("users"),
+      owner: v.string(),
+      repo: v.string(),
+      defaultBranch: v.optional(v.string()),
+      createdAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_user_and_repo", ["userId", "owner", "repo"]),
 
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    // Cached LLM summary of a repo's stack and patterns (keyed by repo + commit)
+    // so we never re-read a large repo per lesson.
+    repoSummaries: defineTable({
+      owner: v.string(),
+      repo: v.string(),
+      commitSha: v.string(),
+      summary: v.object({
+        projectName: v.string(),
+        description: v.string(),
+        stack: v.array(v.string()),
+        patterns: v.array(v.string()),
+        architecture: v.string(),
+        keyFiles: v.array(v.object({ path: v.string(), why: v.string() })),
+        concepts: v.array(v.string()),
+      }),
+      createdAt: v.number(),
+    })
+      .index("by_repo_and_commit", ["owner", "repo", "commitSha"]),
+
+    // A generated course for a user + repo at a given skill depth.
+    courses: defineTable({
+      userId: v.id("users"),
+      projectId: v.id("projects"),
+      skillLevel: v.union(
+        v.literal("beginner"),
+        v.literal("intermediate"),
+        v.literal("advanced"),
+      ),
+      title: v.string(),
+      overview: v.string(),
+      modules: v.array(
+        v.object({
+          title: v.string(),
+          goal: v.string(),
+          lessons: v.array(
+            v.object({
+              title: v.string(),
+              objective: v.string(),
+              concept: v.string(),
+              explanation: v.string(),
+              exercise: v.string(),
+              relevantFiles: v.array(v.string()),
+            }),
+          ),
+        }),
+      ),
+      createdAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_project", ["projectId"]),
+
+    // Per-lesson completion state for a user's course.
+    lessonProgress: defineTable({
+      userId: v.id("users"),
+      courseId: v.id("courses"),
+      moduleIndex: v.number(),
+      lessonIndex: v.number(),
+      completedAt: v.number(),
+    })
+      .index("by_user_and_course", ["userId", "courseId"]),
   },
   {
     schemaValidation: false,
