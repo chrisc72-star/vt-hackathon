@@ -143,6 +143,7 @@ export default function Dashboard() {
   const [isRunningCode, setIsRunningCode] = useState(false);
   const [isPushingFiles, setIsPushingFiles] = useState(false);
   const [commitMessage, setCommitMessage] = useState("");
+  const [pushStatus, setPushStatus] = useState("");
   const [repositoryFilesByProject, setRepositoryFilesByProject] = useState<Record<string, RepositoryFile[]>>({});
   const [isLoadingRepositoryFiles, setIsLoadingRepositoryFiles] = useState(false);
   const active = flatLessons[Math.min(activeIdx, Math.max(flatLessons.length - 1, 0))];
@@ -233,6 +234,7 @@ export default function Dashboard() {
 
   const handlePushFiles = async () => {
     if (!activeProject || !lessonKey || isPushingFiles) return;
+    setPushStatus("");
     const prefix = `${lessonKey}:`;
     const editedFiles = Object.entries(editorDrafts)
       .filter(([key]) => key.startsWith(prefix) && !key.endsWith(":lesson-draft"))
@@ -243,10 +245,11 @@ export default function Dashboard() {
         ? [{ path: selectedExplorerFile, content: editorValue }]
         : [];
     if (filesToPush.length === 0) {
-      setError("Select or edit a file before pushing to GitHub. Folders need a file inside them to be committed.");
+      setPushStatus("Select or create a file before pushing. Folders need a file inside them to be committed.");
       return;
     }
     setError("");
+    setPushStatus("Pushing to GitHub...");
     setIsPushingFiles(true);
     try {
       const result = await pushFiles({
@@ -256,9 +259,10 @@ export default function Dashboard() {
         files: filesToPush,
       });
       setCommitMessage("");
-      setError(`Pushed ${result.fileCount} file${result.fileCount === 1 ? "" : "s"} to ${result.branch}.`);
+      setPushStatus(`Pushed ${result.fileCount} file${result.fileCount === 1 ? "" : "s"} to ${result.branch}.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not push files to GitHub.");
+      const message = err instanceof Error ? err.message : "Could not push files to GitHub.";
+      setPushStatus(message);
     } finally {
       setIsPushingFiles(false);
     }
@@ -453,6 +457,7 @@ export default function Dashboard() {
                       <div className="flex flex-wrap items-center gap-2"><Code2 className="size-4 text-[#d97b2b]" /><span className="font-mono text-[10px] tracking-[.14em] text-[#e8e2d4]">LESSON WORKSPACE</span><span className="max-w-48 truncate font-mono text-[10px] text-[#8fa18c]">{selectedExplorerFile || "lesson-draft"}</span><select value={editorLanguage} onChange={(event) => { if (editorKey) setEditorLanguages((languages) => ({ ...languages, [editorKey]: event.target.value as EditorLanguage })); }} className="border border-[#405044] bg-[#182019] px-2 py-1 font-mono text-[10px] text-[#d8e4d2] outline-none focus:border-[#d97b2b]">{COMMON_EDITOR_LANGUAGES.map((language) => <option key={language} value={language}>{EDITOR_LANGUAGE_LABELS[language]}{detectedEditorLanguages.includes(language) ? " · detected" : ""}</option>)}</select><span className="hidden font-mono text-[10px] text-[#8fa18c] sm:inline">// {editorLanguage === "javascript" ? "run in browser" : "language detected from repo"}</span></div>
                       <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto"><input value={commitMessage} onChange={(event) => setCommitMessage(event.target.value)} placeholder="commit message" className="w-32 border border-[#405044] bg-[#182019] px-2 py-1.5 font-mono text-[10px] text-[#d8e4d2] outline-none placeholder:text-[#6f8270] focus:border-[#d97b2b] sm:w-40" /><button type="button" onClick={handlePushFiles} disabled={isPushingFiles || !selectedExplorerFile || selectedExplorerFile.endsWith("/")} className="inline-flex items-center gap-1.5 border border-[#d97b2b] px-3 py-1.5 font-mono text-[10px] font-semibold text-[#f3d3a7] transition-colors hover:bg-[#334934] disabled:cursor-not-allowed disabled:opacity-50"><Github className="size-3" /> {isPushingFiles ? "Pushing..." : "Push"}</button><button type="button" onClick={runEditorCode} disabled={isRunningCode} className="inline-flex items-center gap-1.5 bg-[#d97b2b] disabled:cursor-wait disabled:opacity-60 px-3 py-1.5 font-mono text-[10px] font-semibold text-[#202a22] transition-colors hover:bg-[#f0a15d]"><Play className="size-3" /> Run</button><button type="button" onClick={() => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: "" })); }} className="font-mono text-[10px] text-[#b9c8ad] hover:text-[#f3d3a7]">clear draft</button></div>
                     </div>
+                    {pushStatus && <p className={`border-b border-[#405044] px-4 py-2 font-mono text-[10px] ${pushStatus.startsWith("Pushed") ? "text-[#9fcf86]" : pushStatus.startsWith("Pushing") ? "text-[#d9b36a]" : "text-[#f0a15d]"}`}>{pushStatus}</p>}
                     <textarea value={editorValue} onChange={(event) => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: event.target.value })); }} placeholder={`// Try the exercise for “${active.title}”\n// Write your ${EDITOR_LANGUAGE_LABELS[editorLanguage]} solution here...`} spellCheck={false} className="min-h-56 w-full resize-y border-0 bg-[#182019] px-4 py-4 font-mono text-xs leading-6 text-[#d8e4d2] outline-none placeholder:text-[#6f8270] focus:ring-2 focus:ring-inset focus:ring-[#d97b2b]" />
                     <div className="border-t border-[#405044] px-4 py-2 font-mono text-[10px] text-[#8fa18c]">draft saved locally for this lesson · {editorValue.split("\n").length} lines</div>
                     <div className="border-t border-[#405044] bg-[#101610] px-4 py-3 font-mono text-xs text-[#d8e4d2]">
