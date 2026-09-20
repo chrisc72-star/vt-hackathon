@@ -64,8 +64,9 @@ export const beginOAuth = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Sign in first.");
     const clientId = process.env.GITHUB_CLIENT_ID;
+    const clientSecret = process.env.GITHUB_CLIENT_SECRET;
     const redirectUri = process.env.GITHUB_OAUTH_REDIRECT_URI || (process.env.CONVEX_SITE_URL ? `${process.env.CONVEX_SITE_URL}/github/oauth/callback` : "");
-    if (!clientId) throw new Error("GitHub connection is not configured: add GITHUB_CLIENT_ID to the Convex Keys panel.");
+    if (!clientId || !clientSecret) throw new Error("GitHub connection is not configured: add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to the Convex Keys panel.");
     if (!redirectUri) throw new Error("GitHub connection is not configured: add GITHUB_OAUTH_REDIRECT_URI to the Convex Keys panel. It must be https://<deployment>.convex.site/github/oauth/callback (not the .convex.cloud URL).");
     const state = crypto.randomUUID();
     await ctx.runMutation(internal.githubConnections.createOAuthState, { userId, state, expiresAt: Date.now() + 10 * 60 * 1000 });
