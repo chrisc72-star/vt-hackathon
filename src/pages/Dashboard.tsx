@@ -12,17 +12,29 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 type Skill = "beginner" | "intermediate" | "advanced";
-type EditorLanguage = "javascript" | "typescript" | "python" | "go" | "rust" | "java" | "cpp" | "ruby";
+type EditorLanguage = "javascript" | "typescript" | "python" | "java" | "cpp" | "csharp" | "c" | "go" | "rust" | "ruby" | "php" | "swift" | "kotlin" | "dart" | "scala" | "r" | "sql" | "bash";
+
+const COMMON_EDITOR_LANGUAGES: EditorLanguage[] = ["javascript", "typescript", "python", "java", "cpp", "csharp", "c", "go", "rust", "ruby", "php", "swift", "kotlin", "dart", "scala", "r", "sql", "bash"];
 
 const EDITOR_LANGUAGE_LABELS: Record<EditorLanguage, string> = {
   javascript: "JavaScript",
   typescript: "TypeScript",
   python: "Python",
-  go: "Go",
-  rust: "Rust",
   java: "Java",
   cpp: "C++",
+  csharp: "C#",
+  c: "C",
+  go: "Go",
+  rust: "Rust",
   ruby: "Ruby",
+  php: "PHP",
+  swift: "Swift",
+  kotlin: "Kotlin",
+  dart: "Dart",
+  scala: "Scala",
+  r: "R",
+  sql: "SQL",
+  bash: "Bash / Shell",
 };
 
 function detectEditorLanguages(files: string[]): EditorLanguage[] {
@@ -35,8 +47,18 @@ function detectEditorLanguages(files: string[]): EditorLanguage[] {
   if (paths.some((file) => /\\.go$/.test(file) || file.endsWith("go.mod"))) add("go");
   if (paths.some((file) => /\\.rs$/.test(file) || file.endsWith("cargo.toml"))) add("rust");
   if (paths.some((file) => /\\.java$/.test(file) || file.endsWith("pom.xml"))) add("java");
-  if (paths.some((file) => /\\.(cpp|cc|cxx|hpp|h)$/.test(file) || file.endsWith("cmakelists.txt"))) add("cpp");
+  if (paths.some((file) => /\\.(cpp|cc|cxx|hpp)$/.test(file) || file.endsWith("cmakelists.txt"))) add("cpp");
+  if (paths.some((file) => /\\.(cs|csproj|sln)$/.test(file))) add("csharp");
+  if (paths.some((file) => /\\.c$/.test(file))) add("c");
   if (paths.some((file) => /\\.rb$/.test(file) || file.endsWith("gemfile"))) add("ruby");
+  if (paths.some((file) => /\\.php$/.test(file) || file.endsWith("composer.json"))) add("php");
+  if (paths.some((file) => /\\.swift$/.test(file) || file.endsWith("package.swift"))) add("swift");
+  if (paths.some((file) => /\\.(kt|kts)$/.test(file) || file.endsWith("build.gradle"))) add("kotlin");
+  if (paths.some((file) => /\\.dart$/.test(file) || file.endsWith("pubspec.yaml"))) add("dart");
+  if (paths.some((file) => /\\.scala$/.test(file) || file.endsWith("build.sbt"))) add("scala");
+  if (paths.some((file) => /\\.[rR]$/.test(file))) add("r");
+  if (paths.some((file) => /\\.(sql|sqlite)$/.test(file))) add("sql");
+  if (paths.some((file) => file.endsWith(".sh") || file.endsWith("bashrc") || file.endsWith("zshrc"))) add("bash");
   return detected.length ? detected : ["javascript"];
 }
 
@@ -300,7 +322,7 @@ export default function Dashboard() {
                   </div>
                   <div className="mt-6 border border-[#cfcabc] bg-[#202a22] shadow-[5px_5px_0_#e6d4bc]">
                     <div className="flex flex-col gap-3 border-b border-[#405044] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex flex-wrap items-center gap-2"><Code2 className="size-4 text-[#d97b2b]" /><span className="font-mono text-[10px] tracking-[.14em] text-[#e8e2d4]">LESSON WORKSPACE</span><select value={editorLanguage} onChange={(event) => { if (editorKey) setEditorLanguages((languages) => ({ ...languages, [editorKey]: event.target.value as EditorLanguage })); }} className="border border-[#405044] bg-[#182019] px-2 py-1 font-mono text-[10px] text-[#d8e4d2] outline-none focus:border-[#d97b2b]">{detectedEditorLanguages.map((language) => <option key={language} value={language}>{EDITOR_LANGUAGE_LABELS[language]}</option>)}</select><span className="hidden font-mono text-[10px] text-[#8fa18c] sm:inline">// {editorLanguage === "javascript" ? "run in browser" : "language detected from repo"}</span></div>
+                      <div className="flex flex-wrap items-center gap-2"><Code2 className="size-4 text-[#d97b2b]" /><span className="font-mono text-[10px] tracking-[.14em] text-[#e8e2d4]">LESSON WORKSPACE</span><select value={editorLanguage} onChange={(event) => { if (editorKey) setEditorLanguages((languages) => ({ ...languages, [editorKey]: event.target.value as EditorLanguage })); }} className="border border-[#405044] bg-[#182019] px-2 py-1 font-mono text-[10px] text-[#d8e4d2] outline-none focus:border-[#d97b2b]">{COMMON_EDITOR_LANGUAGES.map((language) => <option key={language} value={language}>{EDITOR_LANGUAGE_LABELS[language]}{detectedEditorLanguages.includes(language) ? " · detected" : ""}</option>)}</select><span className="hidden font-mono text-[10px] text-[#8fa18c] sm:inline">// {editorLanguage === "javascript" ? "run in browser" : "language detected from repo"}</span></div>
                       <div className="flex items-center gap-3 self-start sm:self-auto"><button type="button" onClick={runEditorCode} className="inline-flex items-center gap-1.5 bg-[#d97b2b] px-3 py-1.5 font-mono text-[10px] font-semibold text-[#202a22] transition-colors hover:bg-[#f0a15d]"><Play className="size-3" /> Run</button><button type="button" onClick={() => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: "" })); }} className="font-mono text-[10px] text-[#b9c8ad] hover:text-[#f3d3a7]">clear draft</button></div>
                     </div>
                     <textarea value={editorValue} onChange={(event) => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: event.target.value })); }} placeholder={`// Try the exercise for “${active.title}”\n// Write your ${EDITOR_LANGUAGE_LABELS[editorLanguage]} solution here...`} spellCheck={false} className="min-h-56 w-full resize-y border-0 bg-[#182019] px-4 py-4 font-mono text-xs leading-6 text-[#d8e4d2] outline-none placeholder:text-[#6f8270] focus:ring-2 focus:ring-inset focus:ring-[#d97b2b]" />
