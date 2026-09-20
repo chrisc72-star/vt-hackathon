@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 600" role="img" aria-labelledby="title desc">
+  <title id="title">Orbit</title>
+  <desc id="desc">Orange orbital mark beside the black Orbit wordmark on a white background</desc>
+  <rect width="940" height="600" fill="#fff"/>
+  <g transform="translate(78 235)" fill="none" stroke="#c85a18" stroke-linecap="round">
+    <path d="M4 108C18 45 72 2 132 2s114 43 128 106" stroke-width="31"/>
+    <path d="M6 143c34-43 78-64 126-64 53 0 96 22 128 64" stroke-width="31"/>
+    <path d="M29 184c27-35 65-51 103-51 42 0 79 18 108 51" stroke-width="31"/>
+  </g>
+  <path fill="#c85a18" d="M144 463c13-30 34-46 61-46s48 16 61 46c-19 13-40 20-61 20s-42-7-61-20Z"/>
+  <circle cx="264" cy="371" r="31" fill="#c85a18"/>
+  <path fill="#c85a18" d="m296 348 42 16-18 40-39-25z"/>
+  <g fill="#171717" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="227" font-weight="900" letter-spacing="-15">
+    <text x="337" y="447">orbit</text>
+  </g>
+</svg>
