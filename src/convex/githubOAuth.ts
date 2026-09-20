@@ -13,8 +13,8 @@ export const callback = httpAction(async (ctx, request) => {
 
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
-  const redirectUri = process.env.GITHUB_OAUTH_REDIRECT_URI;
-  if (!clientId || !clientSecret || !redirectUri) return failure("GitHub OAuth is not configured on the server.", 500);
+  const redirectUri = process.env.GITHUB_OAUTH_REDIRECT_URI || (process.env.CONVEX_SITE_URL ? `${process.env.CONVEX_SITE_URL}/github/oauth/callback` : "");
+  if (!clientId || !clientSecret || !redirectUri) return failure("GitHub OAuth is missing server keys. Configure GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, and GITHUB_OAUTH_REDIRECT_URI using your https://<deployment>.convex.site/github/oauth/callback URL.", 500);
 
   const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
@@ -37,7 +37,7 @@ export const callback = httpAction(async (ctx, request) => {
     accessToken: token.access_token,
   });
 
-  const successUrl = process.env.SITE_URL || process.env.GITHUB_OAUTH_SUCCESS_URL || "/dashboard";
-  const destination = successUrl.startsWith("http") ? `${successUrl.replace(/\/$/, "")}/dashboard?github=connected` : `/dashboard?github=connected`;
+  const successUrl = process.env.GITHUB_OAUTH_SUCCESS_URL || process.env.SITE_URL || "";
+  const destination = successUrl.startsWith("http") ? `${successUrl.replace(/\/$/, "")}/dashboard?github=connected` : "/dashboard?github=connected";
   return new Response(`<script>window.location.replace(${JSON.stringify(destination)});</script><p>GitHub connected. You can close this tab.</p>`, { headers: { "Content-Type": "text/html; charset=utf-8" } });
 });

@@ -66,7 +66,7 @@ export const beginOAuth = action({
     const clientId = process.env.GITHUB_CLIENT_ID;
     const redirectUri = process.env.GITHUB_OAUTH_REDIRECT_URI || (process.env.CONVEX_SITE_URL ? `${process.env.CONVEX_SITE_URL}/github/oauth/callback` : "");
     if (!clientId) throw new Error("GitHub connection is not configured: add GITHUB_CLIENT_ID to the Convex Keys panel.");
-    if (!redirectUri) throw new Error("GitHub connection is not configured: add GITHUB_OAUTH_REDIRECT_URI to the Convex Keys panel, using your Convex site URL plus /github/oauth/callback.");
+    if (!redirectUri) throw new Error("GitHub connection is not configured: add GITHUB_OAUTH_REDIRECT_URI to the Convex Keys panel. It must be https://<deployment>.convex.site/github/oauth/callback (not the .convex.cloud URL).");
     const state = crypto.randomUUID();
     await ctx.runMutation(internal.githubConnections.createOAuthState, { userId, state, expiresAt: Date.now() + 10 * 60 * 1000 });
     const authUrl = new URL("https://github.com/login/oauth/authorize");
@@ -200,19 +200,21 @@ export const fetchProjectFiles = action({
 });
 
 export const fetchRepo = internalAction({
-  args: { url: v.string() },
-  handler: async (_ctx, { url }) => {
+  args: { url: v.string(), userId: v.optional(v.id("users")) },
+  handler: async (ctx, { url, userId }) => {
     const parsed = parseGithubUrl(url);
     if (!parsed) {
       throw new Error("Not a valid GitHub repository URL. Use https://github.com/owner/repo");
     }
     const { owner, repo } = parsed;
 
+    const token = userId ? await getConnectedToken(ctx, userId) : process.env.GITHUB_TOKEN || "";
+    if (!token) throw new Error("Connect your GitHub account before loading this repository.");
     const headers: Record<string, string> = {
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
+      Authorization: `Bearer ${token}`,
     };
-    if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
 
     const ghFetch = async (path: string) => {
       const res = await fetch(`${GITHUB_API}${path}`, { headers });

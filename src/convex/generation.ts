@@ -103,10 +103,11 @@ interface SummarizeResult {
 export const summarizeRepo = action({
   args: { url: v.string() },
   handler: async (ctx, { url }): Promise<SummarizeResult> => {
-    await getAuthUserId(ctx) ?? (() => { throw new Error("Sign in first."); })();
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Sign in first.");
 
-    // 1. Connector
-    const repoData = await ctx.runAction(internal.github.fetchRepo, { url });
+    // 1. Connector — fetches through the signed-in user's GitHub OAuth connection.
+    const repoData = await ctx.runAction(internal.github.fetchRepo, { url, userId });
 
     // 2. Cache check: skip LLM call #1 if this exact commit is already summarized
     const cached = await ctx.runQuery(internal.courses.getSummaryByCommit, {
