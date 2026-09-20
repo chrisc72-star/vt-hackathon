@@ -4,10 +4,10 @@ import { Link } from "react-router";
 
 // Elliptical orbits, tilted and rotating slowly, each carrying a small dot.
 const orbits = [
-  { rx: 46, ry: 34, rotate: -14, duration: 26, dot: "bg-[#d97b2b]", dotSize: "size-2.5" },
-  { rx: 58, ry: 42, rotate: -14, duration: 34, dot: "bg-[#8aa384]", dotSize: "size-2" },
-  { rx: 46, ry: 34, rotate: 32, duration: 30, dot: "bg-[#c6552e]", dotSize: "size-2" },
-  { rx: 60, ry: 44, rotate: 32, duration: 40, dot: "bg-[#c98a4b]", dotSize: "size-1.5" },
+  { rx: 44, ry: 32, rotate: -14, duration: 26, wobble: -6, dot: "#d97b2b", dotR: 1.3 },
+  { rx: 55, ry: 40, rotate: -14, duration: 34, wobble: 5, dot: "#8aa384", dotR: 1.1 },
+  { rx: 44, ry: 32, rotate: 32, duration: 30, wobble: 6, dot: "#c6552e", dotR: 1.1 },
+  { rx: 57, ry: 41, rotate: 32, duration: 40, wobble: -4, dot: "#c98a4b", dotR: 0.9 },
 ];
 
 const cards = [
@@ -43,64 +43,78 @@ function OrbitDiagram() {
       {/* Soft halo behind the core */}
       <div className="absolute left-1/2 top-1/2 size-[62%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#e7ecd9]" />
 
-      {/* Tilted elliptical orbits with traveling dots.
-          The core stays perfectly still; each ring breathes (subtle scale)
-          and its dot travels the full ellipse. */}
-      {orbits.map((o, i) => (
-        <div
-          key={i}
-          className="absolute left-1/2 top-1/2"
-          style={{
-            width: `${o.rx * 2}%`,
-            height: `${o.ry * 2}%`,
-            transform: `translate(-50%, -50%) rotate(${o.rotate}deg)`,
-          }}
-        >
-          <motion.div
-            className="absolute inset-0 rounded-[50%] border border-[#d3d5c8]"
-            animate={{ scale: [1, 1.035, 1] }}
-            transition={{ duration: o.duration / 2.6, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
-          />
-          <motion.div
-            className="absolute inset-0"
-            animate={{ rotate: 360 }}
-            transition={{ duration: o.duration, repeat: Infinity, ease: "linear" }}
-          >
-            <span
-              className={`absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full ${o.dot} ${o.dotSize}`}
-            />
-          </motion.div>
-        </div>
-      ))}
+      {/* Tilted elliptical orbits as SVG so the dots follow the true curve.
+          Each ring slowly wobbles its rotation; each dot travels its path. */}
+      <svg viewBox="0 0 100 100" className="absolute inset-0 size-full">
+        {orbits.map((o, i) => {
+          const pathId = `orbit-${i}`;
+          return (
+            <g key={i} transform={`rotate(${o.rotate} 50 50)`}>
+              <motion.ellipse
+                cx="50"
+                cy="50"
+                rx={o.rx}
+                ry={o.ry}
+                fill="none"
+                stroke="#d3d5c8"
+                strokeWidth="0.45"
+                animate={{ rotate: [0, o.wobble, 0] }}
+                transition={{ duration: o.duration, repeat: Infinity, ease: "easeInOut" }}
+                style={{ transformOrigin: "50px 50px" }}
+              />
+              <motion.g
+                animate={{ rotate: [0, o.wobble, 0] }}
+                transition={{ duration: o.duration, repeat: Infinity, ease: "easeInOut" }}
+                style={{ transformOrigin: "50px 50px" }}
+              >
+                <circle r={o.dotR} fill={o.dot}>
+                  <animateMotion
+                    dur={`${o.duration}s`}
+                    repeatCount="indefinite"
+                    path={`M ${50 - o.rx} 50 a ${o.rx} ${o.ry} 0 1 0 ${o.rx * 2} 0 a ${o.rx} ${o.ry} 0 1 0 -${o.rx * 2} 0`}
+                  />
+                </circle>
+              </motion.g>
+              <path id={pathId} fill="none" stroke="none" d={`M ${50 - o.rx} 50 a ${o.rx} ${o.ry} 0 1 0 ${o.rx * 2} 0 a ${o.rx} ${o.ry} 0 1 0 -${o.rx * 2} 0`} />
+            </g>
+          );
+        })}
+      </svg>
 
-      {/* Dark core with sparkle */}
+      {/* Dark core with sparkle + light green glow */}
       <motion.div
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="absolute left-1/2 top-1/2 z-10 flex size-[36%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#28352b] shadow-[0_18px_40px_-12px_rgba(40,53,43,0.35)]"
+        className="absolute left-1/2 top-1/2 z-10 size-[36%] -translate-x-1/2 -translate-y-1/2"
       >
-        <motion.span
-          animate={{ rotate: 360 }}
-          transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
-          className="text-[#eef2e4]"
-        >
-          <Sparkle className="size-9 sm:size-11" fill="currentColor" />
-        </motion.span>
-        <span className="absolute right-[18%] top-[22%] size-4 rounded-full bg-[#dd6f4a] sm:size-5" />
-        <span className="absolute bottom-[26%] left-[24%] size-2 rounded-full bg-[#8aa384]" />
+        <div className="absolute inset-0 rounded-full bg-[#b7cfae]/50 blur-xl" />
+        <div className="relative flex size-full items-center justify-center rounded-full bg-[#28352b] shadow-[0_18px_40px_-12px_rgba(40,53,43,0.35)]">
+          <motion.span
+            animate={{ rotate: 360 }}
+            transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+            className="text-[#eef2e4]"
+          >
+            <Sparkle className="size-9 sm:size-11" fill="currentColor" />
+          </motion.span>
+          <span className="absolute right-[18%] top-[22%] size-4 rounded-full bg-[#dd6f4a] sm:size-5" />
+          <span className="absolute bottom-[26%] left-[24%] size-2 rounded-full bg-[#8aa384]" />
+        </div>
       </motion.div>
 
-      {/* Floating stat cards with hover animation */}
+      {/* Floating stat cards: gentle idle float + hover animation */}
       {cards.map((card, i) => (
         <motion.div
           key={card.label}
           initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.45 + i * 0.15 }}
+          animate={{ opacity: 1, y: [0, -5, 0] }}
+          transition={{
+            opacity: { duration: 0.55, delay: 0.45 + i * 0.15 },
+            y: { duration: 3.6 + i * 0.7, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 },
+          }}
           whileHover={{
-            y: -6,
-            scale: 1.03,
+            scale: 1.04,
+            y: -8,
             boxShadow: "0 18px 40px -12px rgba(40,53,43,0.28)",
           }}
           className={`group absolute z-20 w-44 cursor-default rounded-md border border-[#e0ddd2] bg-white/95 p-3.5 shadow-[0_10px_30px_-12px_rgba(40,53,43,0.18)] backdrop-blur-sm transition-colors hover:border-[#c9c5b8] sm:w-52 ${card.position}`}
