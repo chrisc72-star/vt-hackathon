@@ -195,6 +195,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!activeProject || !selectedExplorerFile || selectedExplorerFile.endsWith("/")) return;
+    const isLocalEntry = (createdExplorerEntries[courseKey] ?? []).includes(selectedExplorerFile);
+    if (isLocalEntry) return;
     const existing = repositoryFiles.find((file: RepositoryFile) => file.path === selectedExplorerFile);
     if (existing?.content) return;
     let cancelled = false;
@@ -205,7 +207,7 @@ export default function Dashboard() {
       })
       .catch((err) => { if (!cancelled) setRepositoryLoadError(err instanceof Error ? err.message : `Could not load ${selectedExplorerFile}.`); });
     return () => { cancelled = true; };
-  }, [activeProject?._id, activeProject?.owner, activeProject?.repo, repositoryBranch, selectedExplorerFile, courseKey, repositoryFiles, fetchProjectFile]);
+  }, [activeProject?._id, activeProject?.owner, activeProject?.repo, repositoryBranch, selectedExplorerFile, courseKey, repositoryFiles, createdExplorerEntries, fetchProjectFile]);
 
   const createExplorerEntry = (event: React.FormEvent) => {
     event.preventDefault();
