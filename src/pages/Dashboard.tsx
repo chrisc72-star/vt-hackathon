@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState("");
   const [isLessonNavMinimized, setIsLessonNavMinimized] = useState(false);
+  const [isWorkspaceNavMinimized, setIsWorkspaceNavMinimized] = useState(false);
 
   const projects = useQuery(api.courses.myProjects, {}) ?? [];
   const activeProject: Doc<"projects"> | undefined = projects.find((project) => project._id === selectedProjectId) ?? projects[0];
@@ -95,14 +96,21 @@ export default function Dashboard() {
 
     <div className="mx-auto flex max-w-[1400px] gap-6 px-5 py-8 lg:px-8 lg:py-10">
       {course && !creatingNewCourse && (
-        <aside className="hidden w-52 shrink-0 lg:block">
+        <aside className={`hidden shrink-0 lg:block ${isWorkspaceNavMinimized ? "w-12" : "w-52"}`}>
           <div className="sticky top-6 rounded-sm border border-[#e0dbd0] bg-[#fcfaf5] p-3">
-            <p className="px-3 py-3 font-mono text-[10px] font-semibold tracking-[.16em] text-[#8a867a]">WORKSPACE</p>
+            <div className={`flex items-center ${isWorkspaceNavMinimized ? "justify-center" : "justify-between"}`}>
+              {!isWorkspaceNavMinimized && <p className="px-3 py-3 font-mono text-[10px] font-semibold tracking-[.16em] text-[#8a867a]">WORKSPACE</p>}
+              <button type="button" onClick={() => setIsWorkspaceNavMinimized((value) => !value)} className="flex size-8 items-center justify-center rounded-sm text-[#6d6a5e] transition-colors hover:bg-[#f5f0e6] hover:text-[#1d3f2c]" aria-label={isWorkspaceNavMinimized ? "Expand workspace navigation" : "Minimize workspace navigation"} title={isWorkspaceNavMinimized ? "Expand workspace navigation" : "Minimize workspace navigation"}>
+                {isWorkspaceNavMinimized ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+              </button>
+            </div>
+            <div className={isWorkspaceNavMinimized ? "hidden" : "block"}>
             <button onClick={() => setWorkspaceTab("today")} className={`flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-sm font-semibold transition-colors ${workspaceTab === "today" ? "bg-[#fbeede] text-[#a85416]" : "text-[#6d6a5e] hover:bg-[#f5f0e6]"}`}><Home className="size-4" /> Today</button>
             <button onClick={() => setWorkspaceTab("lessons")} className={`flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-sm font-semibold transition-colors ${workspaceTab === "lessons" ? "bg-[#fbeede] text-[#a85416]" : "text-[#6d6a5e] hover:bg-[#f5f0e6]"}`}><BookOpen className="size-4" /> Lessons</button>
             <button onClick={() => setWorkspaceTab("streak")} className={`flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-sm font-semibold transition-colors ${workspaceTab === "streak" ? "bg-[#fbeede] text-[#a85416]" : "text-[#6d6a5e] hover:bg-[#f5f0e6]"}`}><Flame className="size-4" /> Streak</button>
             <Link to="/settings" className="flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-sm font-semibold text-[#6d6a5e] transition-colors hover:bg-[#f5f0e6]"><SettingsIcon className="size-4" /> Settings</Link>
             <div className="mt-4 border-t border-[#e0dbd0] pt-4"><p className="px-3 font-mono text-[10px] text-[#8a867a]">PROGRESS</p><p className="mt-2 px-3 font-serif text-2xl font-semibold">{totalLessons ? Math.round((completed.size / totalLessons) * 100) : 0}%</p><div className="mx-3 mt-2 h-1 bg-[#e8e2d4]"><div className="h-full bg-[#d97b2b]" style={{ width: `${totalLessons ? (completed.size / totalLessons) * 100 : 0}%` }} /></div></div>
+            </div>
           </div>
         </aside>
       )}
