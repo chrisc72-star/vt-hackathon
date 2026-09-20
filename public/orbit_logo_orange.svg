@@ -1,13 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 310" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 600" role="img" aria-labelledby="title desc">
   <title id="title">Orbit</title>
-  <desc id="desc">Orange orbital mark beside the charcoal Orbit wordmark</desc>
-  <g fill="none" stroke="#c95b19" stroke-linecap="round">
-    <path d="M18 146c28-83 104-132 184-132s156 49 184 132" stroke-width="34"/>
-    <path d="M20 174c55-73 119-103 182-103 73 0 132 33 184 103" stroke-width="34"/>
-    <path d="M42 215c43-55 99-81 160-81 67 0 126 28 172 81" stroke-width="34"/>
+  <desc id="desc">Orange orbital mark beside the black Orbit wordmark on a white background</desc>
+  <rect width="940" height="600" fill="#fff"/>
+  <g transform="translate(78 235)" fill="none" stroke="#c85a18" stroke-linecap="round">
+    <path d="M4 108C18 45 72 2 132 2s114 43 128 106" stroke-width="31"/>
+    <path d="M6 143c34-43 78-64 126-64 53 0 96 22 128 64" stroke-width="31"/>
+    <path d="M29 184c27-35 65-51 103-51 42 0 79 18 108 51" stroke-width="31"/>
   </g>
-  <path fill="#c95b19" d="M128 276c21-38 43-55 75-55 31 0 54 17 75 55-24 18-50 27-75 27s-51-9-75-27Z"/>
-  <circle cx="220" cy="142" r="42" fill="#c95b19"/>
-  <path fill="#c95b19" d="m282 112 68 25-24 58-58-37z"/>
-  <g fill="#171717" font-family="Arial, Helvetica, sans-serif" font-weight="700"><text x="395" y="224" font-size="238" letter-spacing="-15">orbit</text></g>
+  <path fill="#c85a18" d="M144 463c13-30 34-46 61-46s48 16 61 46c-19 13-40 20-61 20s-42-7-61-20Z"/>
+  <circle cx="264" cy="371" r="31" fill="#c85a18"/>
+  <path fill="#c85a18" d="m296 348 42 16-18 40-39-25z"/>
+  <g fill="#171717" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="227" font-weight="900" letter-spacing="-15">
+    <text x="337" y="447">orbit</text>
+  </g>
 </svg>
