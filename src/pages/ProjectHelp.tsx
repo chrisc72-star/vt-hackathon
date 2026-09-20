@@ -68,7 +68,7 @@ export default function ProjectHelp() {
             <p className="font-mono text-[10px] tracking-[.16em] text-[#8a867a]">NEED A WALKTHROUGH?</p>
             <h2 className="mt-3 font-serif text-2xl font-semibold">GitHub explains the basics.</h2>
             <p className="mt-3 text-sm leading-6 text-[#6d6a5e]">Their beginner guide covers creating a repository and adding files without using the command line.</p>
-            <a href="https://docs.github.com/en/get-started/start-your-journey/hello-world" target="_blank" rel="noreferrer" className="mt-6 inline-flex items-center gap-2 font-mono text-xs font-semibold text-[#a85416] hover:text-[#c2571a]">Open GitHub’s beginner guide <ExternalLink className="size-3.5" /></a>
+            <a href="https://github.com/new" target="_blank" rel="noreferrer" className="mt-6 inline-flex items-center gap-2 font-mono text-xs font-semibold text-[#a85416] hover:text-[#c2571a]">Open GitHub’s new repository page <ExternalLink className="size-3.5" /></a>
           </section>
         </div>
 
