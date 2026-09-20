@@ -12,6 +12,33 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 type Skill = "beginner" | "intermediate" | "advanced";
+type EditorLanguage = "javascript" | "typescript" | "python" | "go" | "rust" | "java" | "cpp" | "ruby";
+
+const EDITOR_LANGUAGE_LABELS: Record<EditorLanguage, string> = {
+  javascript: "JavaScript",
+  typescript: "TypeScript",
+  python: "Python",
+  go: "Go",
+  rust: "Rust",
+  java: "Java",
+  cpp: "C++",
+  ruby: "Ruby",
+};
+
+function detectEditorLanguages(files: string[]): EditorLanguage[] {
+  const paths = files.map((file) => file.toLowerCase());
+  const detected: EditorLanguage[] = [];
+  const add = (language: EditorLanguage) => { if (!detected.includes(language)) detected.push(language); };
+  if (paths.some((file) => /\\.(tsx?|mts|cts)$/.test(file))) add("typescript");
+  if (paths.some((file) => /\\.(jsx?|mjs|cjs)$/.test(file) || file.endsWith("package.json"))) add("javascript");
+  if (paths.some((file) => /\\.py$/.test(file) || file.includes("requirements.txt"))) add("python");
+  if (paths.some((file) => /\\.go$/.test(file) || file.endsWith("go.mod"))) add("go");
+  if (paths.some((file) => /\\.rs$/.test(file) || file.endsWith("cargo.toml"))) add("rust");
+  if (paths.some((file) => /\\.java$/.test(file) || file.endsWith("pom.xml"))) add("java");
+  if (paths.some((file) => /\\.(cpp|cc|cxx|hpp|h)$/.test(file) || file.endsWith("cmakelists.txt"))) add("cpp");
+  if (paths.some((file) => /\\.rb$/.test(file) || file.endsWith("gemfile"))) add("ruby");
+  return detected.length ? detected : ["javascript"];
+}
 
 function isGithubUrl(value: string) { return /^https?:\/\/(www\.)?github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(value.trim()); }
 
@@ -56,14 +83,22 @@ export default function Dashboard() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [editorDrafts, setEditorDrafts] = useState<Record<string, string>>({});
   const [consoleOutputs, setConsoleOutputs] = useState<Record<string, string[]>>({});
+  const [editorLanguages, setEditorLanguages] = useState<Record<string, EditorLanguage>>({});
   const active = flatLessons[Math.min(activeIdx, Math.max(flatLessons.length - 1, 0))];
   const editorKey = active ? `${course?._id ?? "course"}:${active.moduleIndex}:${active.lessonIndex}` : "";
   const editorValue = editorKey ? editorDrafts[editorKey] ?? "" : "";
   const consoleOutput = editorKey ? consoleOutputs[editorKey] ?? [] : [];
+  const detectedEditorLanguages = detectEditorLanguages(flatLessons.flatMap((lesson) => lesson.relevantFiles));
+  const editorLanguage = editorKey ? editorLanguages[editorKey] ?? detectedEditorLanguages[0] : "javascript";
 
   const runEditorCode = () => {
     if (!editorKey) return;
     const output: string[] = [];
+    if (editorLanguage !== "javascript") {
+      output.push(`${EDITOR_LANGUAGE_LABELS[editorLanguage]} selected. The browser console currently runs JavaScript only.`);
+      setConsoleOutputs((outputs) => ({ ...outputs, [editorKey]: output }));
+      return;
+    }
     const formatValue = (value: unknown) => {
       if (typeof value === "string") return value;
       try { return JSON.stringify(value, null, 2); } catch { return String(value); }
@@ -265,10 +300,10 @@ export default function Dashboard() {
                   </div>
                   <div className="mt-6 border border-[#cfcabc] bg-[#202a22] shadow-[5px_5px_0_#e6d4bc]">
                     <div className="flex flex-col gap-3 border-b border-[#405044] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-2"><Code2 className="size-4 text-[#d97b2b]" /><span className="font-mono text-[10px] tracking-[.14em] text-[#e8e2d4]">LESSON WORKSPACE</span><span className="hidden font-mono text-[10px] text-[#8fa18c] sm:inline">// write JavaScript here</span></div>
+                      <div className="flex flex-wrap items-center gap-2"><Code2 className="size-4 text-[#d97b2b]" /><span className="font-mono text-[10px] tracking-[.14em] text-[#e8e2d4]">LESSON WORKSPACE</span><select value={editorLanguage} onChange={(event) => { if (editorKey) setEditorLanguages((languages) => ({ ...languages, [editorKey]: event.target.value as EditorLanguage })); }} className="border border-[#405044] bg-[#182019] px-2 py-1 font-mono text-[10px] text-[#d8e4d2] outline-none focus:border-[#d97b2b]">{detectedEditorLanguages.map((language) => <option key={language} value={language}>{EDITOR_LANGUAGE_LABELS[language]}</option>)}</select><span className="hidden font-mono text-[10px] text-[#8fa18c] sm:inline">// {editorLanguage === "javascript" ? "run in browser" : "language detected from repo"}</span></div>
                       <div className="flex items-center gap-3 self-start sm:self-auto"><button type="button" onClick={runEditorCode} className="inline-flex items-center gap-1.5 bg-[#d97b2b] px-3 py-1.5 font-mono text-[10px] font-semibold text-[#202a22] transition-colors hover:bg-[#f0a15d]"><Play className="size-3" /> Run</button><button type="button" onClick={() => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: "" })); }} className="font-mono text-[10px] text-[#b9c8ad] hover:text-[#f3d3a7]">clear draft</button></div>
                     </div>
-                    <textarea value={editorValue} onChange={(event) => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: event.target.value })); }} placeholder={`// Try the exercise for “${active.title}”\n// Start writing your JavaScript here...`} spellCheck={false} className="min-h-56 w-full resize-y border-0 bg-[#182019] px-4 py-4 font-mono text-xs leading-6 text-[#d8e4d2] outline-none placeholder:text-[#6f8270] focus:ring-2 focus:ring-inset focus:ring-[#d97b2b]" />
+                    <textarea value={editorValue} onChange={(event) => { if (editorKey) setEditorDrafts((drafts) => ({ ...drafts, [editorKey]: event.target.value })); }} placeholder={`// Try the exercise for “${active.title}”\n// Write your ${EDITOR_LANGUAGE_LABELS[editorLanguage]} solution here...`} spellCheck={false} className="min-h-56 w-full resize-y border-0 bg-[#182019] px-4 py-4 font-mono text-xs leading-6 text-[#d8e4d2] outline-none placeholder:text-[#6f8270] focus:ring-2 focus:ring-inset focus:ring-[#d97b2b]" />
                     <div className="border-t border-[#405044] px-4 py-2 font-mono text-[10px] text-[#8fa18c]">draft saved locally for this lesson · {editorValue.split("\n").length} lines</div>
                     <div className="border-t border-[#405044] bg-[#101610] px-4 py-3 font-mono text-xs text-[#d8e4d2]">
                       <div className="mb-2 flex items-center justify-between text-[10px] tracking-[.14em] text-[#8fa18c]"><span>CONSOLE</span><button type="button" onClick={() => { if (editorKey) setConsoleOutputs((outputs) => ({ ...outputs, [editorKey]: [] })); }} className="tracking-normal text-[#b9c8ad] hover:text-[#f3d3a7]">clear console</button></div>
