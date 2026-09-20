@@ -3,11 +3,12 @@ import { ArrowRight, ArrowUpRight, Check, GitBranch, Github, Orbit, Sparkle, Ter
 import { Link } from "react-router";
 
 // Elliptical orbits, tilted and rotating slowly, each carrying a small dot.
+// Kept inside the SVG viewport after tilt so no ring clips at the edges.
 const orbits = [
-  { rx: 44, ry: 32, rotate: -14, duration: 30, dot: "#d97b2b", dotR: 1.3, dotDur: 12 },
-  { rx: 55, ry: 40, rotate: -14, duration: 42, dot: "#8aa384", dotR: 1.1, dotDur: 16 },
-  { rx: 44, ry: 32, rotate: 32, duration: 36, dot: "#c6552e", dotR: 1.1, dotDur: 14 },
-  { rx: 57, ry: 41, rotate: 32, duration: 50, dot: "#c98a4b", dotR: 0.9, dotDur: 20 },
+  { rx: 30, ry: 22, rotate: -14, duration: 30, dot: "#d97b2b", dotR: 1.3, dotDur: 12 },
+  { rx: 36, ry: 26, rotate: -14, duration: 42, dot: "#8aa384", dotR: 1.1, dotDur: 16 },
+  { rx: 30, ry: 22, rotate: 32, duration: 36, dot: "#c6552e", dotR: 1.1, dotDur: 14 },
+  { rx: 38, ry: 28, rotate: 32, duration: 50, dot: "#c98a4b", dotR: 0.9, dotDur: 20 },
 ];
 
 const cards = [
