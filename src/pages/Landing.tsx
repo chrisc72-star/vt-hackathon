@@ -50,7 +50,7 @@ function OrbitDiagram() {
         {orbits.map((o, i) => (
           <motion.g
             key={i}
-            animate={{ rotate: 360 }}
+            animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
             transition={{ duration: o.duration, repeat: Infinity, ease: "linear" }}
             style={{ transformOrigin: "50px 50px" }}
           >
