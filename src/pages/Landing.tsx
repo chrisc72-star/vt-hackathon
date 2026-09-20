@@ -1,47 +1,107 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Check, GitBranch, Github, Orbit, Terminal } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, GitBranch, Github, Orbit, Sparkle, Terminal } from "lucide-react";
 import { Link } from "react-router";
 
-const rings = [
-  { size: "size-56 sm:size-72", y: 14, duration: 3.2, delay: 0, node: { label: "repo", accent: true } },
-  { size: "size-80 sm:size-[26rem]", y: 22, duration: 4.1, delay: 0.6, node: { label: "lessons", accent: false } },
-  { size: "size-[28rem] sm:size-[40rem]", y: 30, duration: 5.4, delay: 1.2, node: { label: "commits", accent: false } },
+// Elliptical orbits, tilted and rotating slowly, each carrying a small dot.
+const orbits = [
+  { rx: 46, ry: 34, rotate: -14, duration: 26, dot: "bg-[#d97b2b]", dotSize: "size-2.5" },
+  { rx: 58, ry: 42, rotate: -14, duration: 34, dot: "bg-[#8aa384]", dotSize: "size-2" },
+  { rx: 46, ry: 34, rotate: 32, duration: 30, dot: "bg-[#c6552e]", dotSize: "size-2" },
+  { rx: 60, ry: 44, rotate: 32, duration: 40, dot: "bg-[#c98a4b]", dotSize: "size-1.5" },
+];
+
+const cards = [
+  {
+    position: "left-0 top-[8%] sm:left-[2%]",
+    chip: "bg-[#f3d9c8]",
+    icon: null,
+    label: "YOUR PROJECT",
+    title: "taskflow / server.ts",
+    subtitle: "12 teaching moments found",
+  },
+  {
+    position: "right-0 top-[14%] sm:right-[2%]",
+    chip: "bg-[#fbeede]",
+    icon: <Sparkle className="size-3 text-[#c2571a]" />,
+    label: "YOUR DEPTH",
+    title: "Comfortable",
+    subtitle: "Calibrated in 3 questions",
+  },
+  {
+    position: "left-1/2 bottom-[2%] -translate-x-1/2",
+    chip: "bg-[#dbe4d3]",
+    icon: <ArrowUpRight className="size-3 text-[#1d3f2c]" />,
+    label: "NEXT UP",
+    title: "The shape of data",
+    subtitle: "18 min · 3 exercises",
+  },
 ];
 
 function OrbitDiagram() {
   return (
-    <div className="relative flex aspect-square w-full max-w-[34rem] items-center justify-center">
-      {rings.map((ring) => (
-        <motion.div
-          key={ring.size}
-          className={`absolute rounded-full border border-[#d8d0bf] ${ring.size}`}
-          animate={{ y: [-ring.y, ring.y, -ring.y] }}
-          transition={{ duration: ring.duration, repeat: Infinity, ease: "easeInOut", delay: ring.delay }}
+    <div className="relative mx-auto aspect-square w-full max-w-[34rem]">
+      {/* Soft halo behind the core */}
+      <div className="absolute left-1/2 top-1/2 size-[62%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#e7ecd9]" />
+
+      {/* Tilted elliptical orbits with traveling dots */}
+      {orbits.map((o, i) => (
+        <div
+          key={i}
+          className="absolute left-1/2 top-1/2"
+          style={{
+            width: `${o.rx * 2}%`,
+            height: `${o.ry * 2}%`,
+            transform: `translate(-50%, -50%) rotate(${o.rotate}deg)`,
+          }}
         >
-          <div className="absolute -top-[13px] left-1/2 -translate-x-1/2">
+          <div className="absolute inset-0 rounded-[50%] border border-[#d3d5c8]" />
+          <motion.div
+            className="absolute inset-0"
+            animate={{ rotate: 360 }}
+            transition={{ duration: o.duration, repeat: Infinity, ease: "linear" }}
+          >
             <span
-              className={`flex items-center gap-1.5 border px-2.5 py-1 font-mono text-[10px] font-semibold ${
-                ring.node.accent
-                  ? "border-[#d99a4e] bg-[#fbeede] text-[#a85416]"
-                  : "border-[#d5d0c4] bg-white text-[#6d6a5e]"
-              }`}
-            >
-              <span className={`size-1.5 rounded-full ${ring.node.accent ? "bg-[#d97b2b]" : "bg-[#1d3f2c]"}`} />
-              {ring.node.label}
-            </span>
-          </div>
-        </motion.div>
+              className={`absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full ${o.dot} ${o.dotSize}`}
+            />
+          </motion.div>
+        </div>
       ))}
 
+      {/* Dark core with sparkle */}
       <motion.div
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="relative z-10 flex size-24 flex-col items-center justify-center rounded-full border border-[#1d3f2c] bg-[#1d3f2c] text-[#f7e8cd] shadow-[6px_6px_0_#e3b98b] sm:size-28"
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="absolute left-1/2 top-1/2 z-10 flex size-[36%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#28352b] shadow-[0_18px_40px_-12px_rgba(40,53,43,0.35)]"
       >
-        <Orbit className="size-8" />
-        <span className="mt-1.5 font-mono text-[10px] font-semibold tracking-[.2em]">ORBIT</span>
+        <motion.span
+          animate={{ rotate: 360 }}
+          transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+          className="text-[#eef2e4]"
+        >
+          <Sparkle className="size-9 sm:size-11" fill="currentColor" />
+        </motion.span>
+        <span className="absolute right-[18%] top-[22%] size-4 rounded-full bg-[#dd6f4a] sm:size-5" />
+        <span className="absolute bottom-[26%] left-[24%] size-2 rounded-full bg-[#8aa384]" />
       </motion.div>
+
+      {/* Floating stat cards */}
+      {cards.map((card, i) => (
+        <motion.div
+          key={card.label}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.45 + i * 0.15 }}
+          className={`absolute z-20 w-44 rounded-md border border-[#e0ddd2] bg-white/95 p-3.5 shadow-[0_10px_30px_-12px_rgba(40,53,43,0.18)] backdrop-blur-sm sm:w-52 ${card.position}`}
+        >
+          <div className="flex items-center gap-2">
+            <span className={`flex size-5 items-center justify-center rounded ${card.chip}`}>{card.icon}</span>
+            <span className="font-mono text-[9px] font-semibold tracking-[.14em] text-[#8a867a]">{card.label}</span>
+          </div>
+          <p className="mt-2 text-sm font-semibold text-[#1f231c]">{card.title}</p>
+          <p className="mt-0.5 text-[11px] text-[#7a776b]">{card.subtitle}</p>
+        </motion.div>
+      ))}
     </div>
   );
 }
@@ -101,7 +161,7 @@ export default function Landing() {
         <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.12 }}>
           <OrbitDiagram />
           <p className="mt-2 text-center font-mono text-[10px] text-[#8a867a]">
-            // every artifact of your learning revolves around one codebase
+            // your repo, your depth, and your next lesson — in orbit
           </p>
         </motion.div>
       </section>
