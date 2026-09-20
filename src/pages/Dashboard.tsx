@@ -57,13 +57,13 @@ export default function Dashboard() {
     setIsSummarizing(true);
     setStatusText("Fetching repository and mapping structure...");
     try {
-      const { cached } = await summarize({ url: repoUrl.trim() });
+      const { cached, projectId } = await summarize({ url: repoUrl.trim() });
       setStatusText(cached ? "Using cached codebase map — generating course..." : "Codebase analyzed — generating course...");
       setIsSummarizing(false);
       setIsGenerating(true);
-      const project = projects.find((p) => repoUrl.includes(`${p.owner}/${p.repo}`));
-      if (!project) throw new Error("Project was not saved — please retry.");
-      await generate({ projectId: project._id, skillLevel: skill });
+      // Use the ID returned by the action instead of the potentially stale
+      // reactive projects query. Convex updates that query asynchronously.
+      await generate({ projectId, skillLevel: skill });
       setStatusText("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
