@@ -146,11 +146,13 @@ export default function Dashboard() {
   const [commitMessage, setCommitMessage] = useState("");
   const [pushStatus, setPushStatus] = useState("");
   const [repositoryFilesByProject, setRepositoryFilesByProject] = useState<Record<string, RepositoryFile[]>>({});
+  const [repositoryBranchesByProject, setRepositoryBranchesByProject] = useState<Record<string, string>>({});
   const [isLoadingRepositoryFiles, setIsLoadingRepositoryFiles] = useState(false);
   const [repositoryLoadError, setRepositoryLoadError] = useState("");
   const active = flatLessons[Math.min(activeIdx, Math.max(flatLessons.length - 1, 0))];
   const courseKey = course?._id ?? "course";
   const repositoryFiles = repositoryFilesByProject[courseKey] ?? [];
+  const repositoryBranch = repositoryBranchesByProject[courseKey] ?? activeProject?.defaultBranch;
   const selectedRepositoryFile = repositoryFiles.find((file) => file.path === selectedExplorerFile);
   const lessonKey = active ? `${courseKey}:${active.moduleIndex}:${active.lessonIndex}` : "";
   const editorKey = active ? `${lessonKey}:${selectedExplorerFile || "lesson-draft"}` : "";
@@ -175,6 +177,7 @@ export default function Dashboard() {
       .then((result) => {
         if (cancelled) return;
         const loadedFiles = result.files;
+        setRepositoryBranchesByProject((branches) => ({ ...branches, [courseKey]: result.branch }));
         setRepositoryFilesByProject((files) => ({ ...files, [courseKey]: loadedFiles }));
         const firstReadable = loadedFiles.find((file) => file.readable);
         setSelectedExplorerFile(firstReadable?.path || "");
@@ -195,14 +198,14 @@ export default function Dashboard() {
     const existing = repositoryFiles.find((file: RepositoryFile) => file.path === selectedExplorerFile);
     if (existing?.content) return;
     let cancelled = false;
-    fetchProjectFile({ owner: activeProject.owner, repo: activeProject.repo, branch: activeProject.defaultBranch, path: selectedExplorerFile })
+    fetchProjectFile({ owner: activeProject.owner, repo: activeProject.repo, branch: repositoryBranch, path: selectedExplorerFile })
       .then((file) => {
         if (cancelled) return;
         setRepositoryFilesByProject((files) => ({ ...files, [courseKey]: (files[courseKey] ?? []).map((item) => item.path === file.path ? file : item) }));
       })
       .catch((err) => { if (!cancelled) setRepositoryLoadError(err instanceof Error ? err.message : `Could not load ${selectedExplorerFile}.`); });
     return () => { cancelled = true; };
-  }, [activeProject?._id, activeProject?.owner, activeProject?.repo, activeProject?.defaultBranch, selectedExplorerFile, courseKey, repositoryFiles, fetchProjectFile]);
+  }, [activeProject?._id, activeProject?.owner, activeProject?.repo, repositoryBranch, selectedExplorerFile, courseKey, repositoryFiles, fetchProjectFile]);
 
   const createExplorerEntry = (event: React.FormEvent) => {
     event.preventDefault();
