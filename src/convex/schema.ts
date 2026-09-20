@@ -46,6 +46,14 @@ const schema = defineSchema(
       expiresAt: v.number(),
     }).index("by_state", ["state"]),
 
+    githubOAuthTickets: defineTable({
+      ticket: v.string(),
+      githubUserId: v.string(),
+      login: v.string(),
+      accessToken: v.string(),
+      expiresAt: v.number(),
+    }).index("by_ticket", ["ticket"]),
+
     // A GitHub repository connected by a user.
     projects: defineTable({
       userId: v.id("users"),

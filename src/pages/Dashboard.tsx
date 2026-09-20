@@ -9,7 +9,7 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleDot, Code2, FileCode2, FilePlus2, Flame, Folder, FolderPlus, Github, GitBranch, Home, Layers3, Loader2, LogOut, PanelLeftClose, PanelLeftOpen, Play, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 
 type Skill = "beginner" | "intermediate" | "advanced";
 type RepositoryFile = { path: string; content: string; readable: boolean };
@@ -101,6 +101,7 @@ const SKILL_LABELS: [Skill, string, string][] = [
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [repoUrl, setRepoUrl] = useState("");
   const [skill, setSkill] = useState<Skill | null>(null);
@@ -116,6 +117,7 @@ export default function Dashboard() {
 
   const projects = useQuery(api.courses.myProjects, {}) ?? [];
   const githubStatus = useQuery(api.githubConnections.getStatus, {});
+  const claimGithubTicket = useMutation(api.githubConnections.claimOAuthTicket);
   const activeProject: Doc<"projects"> | undefined = projects.find((project) => project._id === selectedProjectId) ?? projects[0];
   const course = useQuery(api.courses.latestCourse, activeProject ? { projectId: activeProject._id } : "skip") ?? null;
   const progress = useQuery(api.courses.courseProgress, course ? { courseId: course._id } : "skip") ?? [];
@@ -127,6 +129,20 @@ export default function Dashboard() {
   const pushFiles = useAction(api.github.pushFiles);
   const generate = useAction(api.generation.generateCourse);
   const toggleComplete = useMutation(api.courses.toggleLessonComplete);
+
+  useEffect(() => {
+    const ticket = searchParams.get("github_ticket");
+    if (!ticket) return;
+    let cancelled = false;
+    claimGithubTicket({ ticket })
+      .then(() => {
+        if (!cancelled) setSearchParams({}, { replace: true });
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not finish GitHub connection.");
+      });
+    return () => { cancelled = true; };
+  }, [searchParams, claimGithubTicket, setSearchParams]);
 
   const completed = new Set(progress.map((p) => `${p.moduleIndex}:${p.lessonIndex}`));
   const totalLessons = course?.modules.reduce((n, m) => n + m.lessons.length, 0) ?? 0;

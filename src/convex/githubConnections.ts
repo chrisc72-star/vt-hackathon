@@ -61,6 +61,29 @@ export const consumeOAuthState = internalMutation({
   },
 });
 
+export const createOAuthTicket = internalMutation({
+  args: { ticket: v.string(), githubUserId: v.string(), login: v.string(), accessToken: v.string(), expiresAt: v.number() },
+  handler: async (ctx, args) => { await ctx.db.insert("githubOAuthTickets", args); },
+});
+
+export const claimOAuthTicket = mutation({
+  args: { ticket: v.string() },
+  handler: async (ctx, { ticket }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Sign in first.");
+    const row = await ctx.db.query("githubOAuthTickets").withIndex("by_ticket", (q) => q.eq("ticket", ticket)).first();
+    if (!row || row.expiresAt < Date.now()) {
+      if (row) await ctx.db.delete(row._id);
+      throw new Error("This GitHub installation link expired. Connect GitHub again.");
+    }
+    await ctx.db.delete(row._id);
+    const existing = await ctx.db.query("githubConnections").withIndex("by_user", (q) => q.eq("userId", userId)).first();
+    const connection = { userId, githubUserId: row.githubUserId, login: row.login, accessToken: row.accessToken, connectedAt: Date.now() };
+    if (existing) await ctx.db.patch(existing._id, connection);
+    else await ctx.db.insert("githubConnections", connection);
+  },
+});
+
 export const saveConnection = internalMutation({
   args: {
     userId: v.id("users"),
