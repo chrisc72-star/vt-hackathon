@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LessonChat } from "@/components/LessonChat";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
@@ -196,6 +197,7 @@ export default function Dashboard() {
               <div className="border border-[#ddd6c9] bg-[#fcfaf5] p-4"><p className="font-mono text-[10px] text-[#8a867a]">DEPTH</p><p className="mt-3 text-sm font-semibold capitalize">{course.skillLevel}</p><p className="mt-1 text-[11px] text-[#7a776b]">tuned to your level</p></div>
             </div>
             {active && (
+              <>
               <article className="mt-6 border border-[#cfcabc] bg-[#fcfaf5] shadow-[6px_6px_0_#e6d4bc]">
                 <div className="flex items-center justify-between border-b border-[#e0dbd0] bg-[#f5f0e6] px-5 py-3 font-mono text-[10px] text-[#7a776b]">
                   <span>MODULE {active.moduleIndex + 1} · LESSON {active.lessonIndex + 1}</span>
@@ -216,6 +218,17 @@ export default function Dashboard() {
                   </div>
                 </div>
               </article>
+              <LessonChat
+                courseId={course._id}
+                moduleIndex={active.moduleIndex}
+                lessonIndex={active.lessonIndex}
+                lessonTitle={active.title}
+                objective={active.objective}
+                explanation={active.explanation}
+                exercise={active.exercise}
+                relevantFiles={active.relevantFiles}
+              />
+              </>
             )}
             {error && <p className="mt-4 border-l-2 border-[#c2571a] bg-[#fbeede] px-3 py-2 text-xs text-[#98451c]">{error}</p>}
           </section>

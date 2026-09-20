@@ -103,6 +103,28 @@ const schema = defineSchema(
       completedAt: v.number(),
     })
       .index("by_user_and_course", ["userId", "courseId"]),
+
+    // Daily server-side quota for lesson help. Reservations prevent concurrent
+    // requests from bypassing the message/token caps.
+    chatUsage: defineTable({
+      userId: v.id("users"),
+      day: v.string(),
+      messageCount: v.number(),
+      tokenCount: v.number(),
+      reservedTokens: v.number(),
+    }).index("by_user_and_day", ["userId", "day"]),
+
+    chatMessages: defineTable({
+      userId: v.id("users"),
+      courseId: v.id("courses"),
+      moduleIndex: v.number(),
+      lessonIndex: v.number(),
+      role: v.union(v.literal("user"), v.literal("assistant")),
+      content: v.string(),
+      inputTokens: v.optional(v.number()),
+      outputTokens: v.optional(v.number()),
+      createdAt: v.number(),
+    }).index("by_lesson", ["courseId", "moduleIndex", "lessonIndex"]),
   },
   {
     schemaValidation: false,
