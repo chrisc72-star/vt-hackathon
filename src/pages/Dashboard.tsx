@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, BookOpen, ChevronRight, CircleDot, FileCode2, Github, GitBranch, Layers3, Loader2, LogOut, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleDot, FileCode2, Github, GitBranch, Layers3, Loader2, LogOut, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
@@ -88,6 +88,9 @@ export default function Dashboard() {
     <div className="mx-auto max-w-[1400px] px-5 py-8 lg:px-8 lg:py-10"><AnimatePresence mode="wait">
       {!course || creatingNewCourse ? (
         <motion.div key="setup" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mx-auto max-w-4xl">
+          {creatingNewCourse && course && (
+            <button type="button" onClick={() => { setCreatingNewCourse(false); setRepoUrl(""); setSkill(null); setError(""); }} className="mb-8 inline-flex items-center gap-2 font-mono text-xs text-[#6d6a5e] transition-colors hover:text-[#1d3f2c]"><ArrowLeft className="size-3.5" /> Back to my lessons</button>
+          )}
           <div className="mb-10">
             <p className="font-mono text-xs text-[#b06a2a]">$ orbit init --personalized</p>
             <h1 className="mt-4 font-serif text-5xl font-semibold leading-[1.05] tracking-[-.02em] sm:text-6xl">Build a course<br /><span className="text-[#c2571a]">from your code.</span></h1>
