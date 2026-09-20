@@ -1,5 +1,9 @@
+"use node";
+
 import { v } from "convex/values";
 import { action, internalAction } from "./_generated/server";
+import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // GitHub connector: fetch repo metadata, file tree, and a digest of key files
@@ -42,6 +46,70 @@ function selectDigestFiles(tree: TreeItem[]): string[] {
 
   return [...manifests.slice(0, 6), ...source].slice(0, 30).map((f) => f.path);
 }
+
+export const pushFiles = action({
+  args: {
+    projectId: v.id("projects"),
+    branch: v.optional(v.string()),
+    message: v.string(),
+    files: v.array(v.object({ path: v.string(), content: v.string() })),
+  },
+  handler: async (ctx, { projectId, branch, message, files }): Promise<{ branch: string; commitSha: string; commitUrl: string; fileCount: number }> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Sign in first.");
+    if (files.length === 0) throw new Error("There are no files to push.");
+
+    const project: { _id: Id<"projects">; userId: Id<"users">; owner: string; repo: string; defaultBranch?: string } | null = await ctx.runQuery(internal.courses.getProject, { projectId });
+    if (!project || project.userId !== userId) throw new Error("You do not have access to this repository.");
+
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) throw new Error("GITHUB_TOKEN is not set. Add it in the Keys panel to enable pushes.");
+    const headers: Record<string, string> = {
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+    const apiFetch = async (path: string, options?: RequestInit) => {
+      const response = await fetch(`${GITHUB_API}${path}`, { ...options, headers: { ...headers, ...(options?.headers ?? {}) } });
+      if (!response.ok) {
+        const detail = (await response.text()).slice(0, 500);
+        throw new Error(`GitHub push failed (${response.status}): ${detail}`);
+      }
+      return response.json();
+    };
+
+    const repoPath = `/repos/${project.owner}/${project.repo}`;
+    const resolvedBranch: string = branch || project.defaultBranch || (await apiFetch(repoPath)).default_branch as string;
+    const ref = await apiFetch(`${repoPath}/git/ref/heads/${encodeURIComponent(resolvedBranch)}`);
+    const baseSha = ref.object.sha as string;
+    const baseCommit = await apiFetch(`${repoPath}/git/commits/${baseSha}`);
+    const tree: { path: string; mode: "100644"; type: "blob"; sha: string }[] = [];
+
+    for (const file of files) {
+      const blob = await apiFetch(`${repoPath}/git/blobs`, {
+        method: "POST",
+        body: JSON.stringify({ content: Buffer.from(file.content, "utf8").toString("base64"), encoding: "base64" }),
+      });
+      tree.push({ path: file.path.split("/").filter(Boolean).join("/"), mode: "100644", type: "blob", sha: blob.sha });
+    }
+
+    const newTree = await apiFetch(`${repoPath}/git/trees`, {
+      method: "POST",
+      body: JSON.stringify({ base_tree: baseCommit.tree.sha, tree }),
+    });
+    const commit = await apiFetch(`${repoPath}/git/commits`, {
+      method: "POST",
+      body: JSON.stringify({ message: message.trim() || "Update lesson files", tree: newTree.sha, parents: [baseSha] }),
+    });
+    await apiFetch(`${repoPath}/git/refs/heads/${encodeURIComponent(resolvedBranch)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ sha: commit.sha, force: false }),
+    });
+
+    return { branch: resolvedBranch, commitSha: commit.sha as string, commitUrl: commit.html_url as string, fileCount: files.length };
+  },
+});
 
 export const fetchProjectFiles = action({
   args: { owner: v.string(), repo: v.string(), branch: v.optional(v.string()) },
