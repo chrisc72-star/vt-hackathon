@@ -9,22 +9,35 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 //   commit) → LLM call #2 drafts modules + lessons with the skill level as a
 //   parameter. Persistence lives in courses.ts.
 
-const OPENAI_API = "https://api.openai.com/v1";
-const MODEL = "gpt-4o-mini";
+const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
+const MODEL = "claude-sonnet-4-5";
+
+// Anthropic has no native JSON mode, so we prompt for JSON-only output and
+// strip any fence the model still adds before parsing.
+function extractJSON(raw: string): unknown {
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const text = fenced ? fenced[1] : raw;
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("LLM returned no JSON object.");
+  return JSON.parse(text.slice(start, end + 1));
+}
 
 async function chatJSON<T>(system: string, user: string): Promise<T> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OPENAI_API_KEY is not set. Add it in the Keys panel.");
-  const res = await fetch(`${OPENAI_API}/chat/completions`, {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set. Add it in the Keys panel.");
+  const res = await fetch(ANTHROPIC_API, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
     body: JSON.stringify({
       model: MODEL,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      response_format: { type: "json_object" },
+      max_tokens: 8000,
+      system,
+      messages: [{ role: "user", content: user }],
       temperature: 0.4,
     }),
   });
@@ -33,7 +46,9 @@ async function chatJSON<T>(system: string, user: string): Promise<T> {
     throw new Error(`LLM request failed (${res.status}): ${body.slice(0, 300)}`);
   }
   const data = await res.json();
-  return JSON.parse(data.choices[0].message.content) as T;
+  const text = data.content?.find((block: { type: string }) => block.type === "text")?.text;
+  if (!text) throw new Error("LLM returned an empty response.");
+  return extractJSON(text) as T;
 }
 
 interface RepoSummary {
