@@ -14,16 +14,26 @@ function getStoredTheme(): Theme {
 export default function Settings() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [theme, setTheme] = useState<Theme>(getStoredTheme);
+  const [savedTheme, setSavedTheme] = useState<Theme>(getStoredTheme);
+  const [draftTheme, setDraftTheme] = useState<Theme>(getStoredTheme);
   const [saved, setSaved] = useState(false);
+  const hasChanges = draftTheme !== savedTheme;
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    window.localStorage.setItem("orbit-theme", theme);
+    document.documentElement.classList.toggle("dark", savedTheme === "dark");
+    window.localStorage.setItem("orbit-theme", savedTheme);
+  }, [savedTheme]);
+
+  const handleSave = () => {
+    setSavedTheme(draftTheme);
     setSaved(true);
-    const timer = window.setTimeout(() => setSaved(false), 1400);
-    return () => window.clearTimeout(timer);
-  }, [theme]);
+    window.setTimeout(() => setSaved(false), 1400);
+  };
+
+  const handleDiscard = () => {
+    setDraftTheme(savedTheme);
+    setSaved(false);
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -58,18 +68,18 @@ export default function Settings() {
             <div className="flex items-center gap-3 border-b border-border bg-muted/40 px-5 py-4"><Palette className="size-4 text-[#d97b2b]" /><div><h2 className="text-sm font-semibold">Appearance</h2><p className="mt-0.5 text-xs text-muted-foreground">Choose the atmosphere for your study sessions.</p></div></div>
             <div className="p-5 sm:p-6">
               <div className="grid gap-3 sm:grid-cols-2">
-                <button onClick={() => setTheme("light")} className={`group rounded-sm border p-4 text-left transition-all ${theme === "light" ? "border-[#d97b2b] bg-[#fbeede] shadow-[3px_3px_0_#eccfae]" : "border-border hover:border-[#d9a46d]"}`}>
-                  <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-sm font-semibold"><Sun className="size-4 text-[#d97b2b]" /> Light mode</span><span className={`flex size-4 items-center justify-center rounded-full border ${theme === "light" ? "border-[#d97b2b] bg-[#d97b2b] text-white" : "border-muted-foreground/40"}`}>{theme === "light" && <Check className="size-3" />}</span></div>
+                <button onClick={() => setDraftTheme("light")} className={`group rounded-sm border p-4 text-left transition-all ${draftTheme === "light" ? "border-[#d97b2b] bg-[#fbeede] shadow-[3px_3px_0_#eccfae]" : "border-border hover:border-[#d9a46d]"}`}>
+                  <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-sm font-semibold"><Sun className="size-4 text-[#d97b2b]" /> Light mode</span><span className={`flex size-4 items-center justify-center rounded-full border ${draftTheme === "light" ? "border-[#d97b2b] bg-[#d97b2b] text-white" : "border-muted-foreground/40"}`}>{draftTheme === "light" && <Check className="size-3" />}</span></div>
                   <div className="mt-4 h-14 rounded-sm border border-[#d9d4c9] bg-[#faf8f2] p-2"><div className="h-2 w-2/3 rounded bg-[#1d3f2c]" /><div className="mt-2 h-1.5 w-1/2 rounded bg-[#d97b2b] opacity-70" /><div className="mt-2 h-1.5 w-3/4 rounded bg-[#d9d4c9]" /></div>
                   <p className="mt-3 text-xs text-muted-foreground">Warm paper, orange signals, dark green anchors.</p>
                 </button>
-                <button onClick={() => setTheme("dark")} className={`group rounded-sm border p-4 text-left transition-all ${theme === "dark" ? "border-[#d97b2b] bg-[#26392d] shadow-[3px_3px_0_#8c552f]" : "border-border hover:border-[#d9a46d]"}`}>
-                  <div className="flex items-center justify-between"><span className={`flex items-center gap-2 text-sm font-semibold ${theme === "dark" ? "text-[#f7ecda]" : ""}`}><Moon className="size-4 text-[#d97b2b]" /> Dark mode</span><span className={`flex size-4 items-center justify-center rounded-full border ${theme === "dark" ? "border-[#e8913a] bg-[#d97b2b] text-white" : "border-muted-foreground/40"}`}>{theme === "dark" && <Check className="size-3" />}</span></div>
+                <button onClick={() => setDraftTheme("dark")} className={`group rounded-sm border p-4 text-left transition-all ${draftTheme === "dark" ? "border-[#d97b2b] bg-[#26392d] shadow-[3px_3px_0_#8c552f]" : "border-border hover:border-[#d9a46d]"}`}>
+                  <div className="flex items-center justify-between"><span className={`flex items-center gap-2 text-sm font-semibold ${draftTheme === "dark" ? "text-[#f7ecda]" : ""}`}><Moon className="size-4 text-[#d97b2b]" /> Dark mode</span><span className={`flex size-4 items-center justify-center rounded-full border ${draftTheme === "dark" ? "border-[#e8913a] bg-[#d97b2b] text-white" : "border-muted-foreground/40"}`}>{draftTheme === "dark" && <Check className="size-3" />}</span></div>
                   <div className="mt-4 h-14 rounded-sm border border-[#415344] bg-[#18251d] p-2"><div className="h-2 w-2/3 rounded bg-[#f7ecda]" /><div className="mt-2 h-1.5 w-1/2 rounded bg-[#d97b2b]" /><div className="mt-2 h-1.5 w-3/4 rounded bg-[#415344]" /></div>
-                  <p className={`mt-3 text-xs ${theme === "dark" ? "text-[#c2cfc1]" : "text-muted-foreground"}`}>Deep green workspace, softened cream type, amber focus.</p>
+                  <p className={`mt-3 text-xs ${draftTheme === "dark" ? "text-[#c2cfc1]" : "text-muted-foreground"}`}>Deep green workspace, softened cream type, amber focus.</p>
                 </button>
               </div>
-              <div className="mt-4 flex items-center gap-2 font-mono text-[10px] text-muted-foreground">{saved ? <><Check className="size-3 text-[#d97b2b]" /> preference saved locally</> : "Your preference is saved on this device."}</div>
+              <div className="mt-4 flex items-center gap-2 font-mono text-[10px] text-muted-foreground">{saved ? <><Check className="size-3 text-[#d97b2b]" /> changes saved</> : hasChanges ? "Unsaved appearance changes" : "Your preference is saved on this device."}</div>
             </div>
           </section>
 
@@ -82,6 +92,15 @@ export default function Settings() {
           </section>
         </div>
       </div>
+
+      {hasChanges && (
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#d9d4c9] bg-[#fcfaf5]/95 px-5 py-4 shadow-[0_-10px_30px_-18px_rgba(40,53,43,0.35)] backdrop-blur-md dark:border-[#405044] dark:bg-[#1d2b22]/95">
+          <div className="mx-auto flex max-w-4xl flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-3"><span className="size-2 rounded-full bg-[#d97b2b]" /><div><p className="text-sm font-semibold">You have unsaved changes</p><p className="font-mono text-[10px] text-muted-foreground">Theme: {savedTheme} → {draftTheme}</p></div></div>
+            <div className="flex gap-2"><Button type="button" variant="ghost" onClick={handleDiscard} className="rounded-sm text-xs text-muted-foreground hover:text-foreground">Don’t save</Button><Button type="button" onClick={handleSave} className="rounded-sm bg-[#1d3f2c] text-xs text-[#f7ecda] hover:bg-[#2a5a40]">Save changes</Button></div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

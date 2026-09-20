@@ -117,6 +117,42 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* The workspace uses a bespoke orange/green palette, so these dark-mode
+   overrides translate its fixed light surface tokens as well. */
+.dark .orbit-workspace {
+  background: #15231a !important;
+  color: #f3eadc !important;
+}
+.dark .orbit-workspace header,
+.dark .orbit-workspace aside,
+.dark .orbit-workspace article,
+.dark .orbit-workspace section > div,
+.dark .orbit-workspace form {
+  background-color: #1d2b22 !important;
+  border-color: #405044 !important;
+}
+.dark .orbit-workspace [class~="bg-[#fcfaf5]"],
+.dark .orbit-workspace [class~="bg-[#faf8f2]"],
+.dark .orbit-workspace [class~="bg-white"] {
+  background-color: #1d2b22 !important;
+}
+.dark .orbit-workspace [class~="bg-[#f5f0e6]"],
+.dark .orbit-workspace [class~="bg-[#fbeede]"],
+.dark .orbit-workspace [class~="bg-[#f8efe3]"] {
+  background-color: #26392d !important;
+}
+.dark .orbit-workspace [class~="text-[#1f231c]"],
+.dark .orbit-workspace [class~="text-[#5d5f55]"],
+.dark .orbit-workspace [class~="text-[#6d6a5e]"],
+.dark .orbit-workspace [class~="text-[#7a776b]"] {
+  color: #d8dfd2 !important;
+}
+.dark .orbit-workspace [class~="border-[#e0dbd0]"],
+.dark .orbit-workspace [class~="border-[#ddd6c9]"],
+.dark .orbit-workspace [class~="border-[#d3cfc2]"] {
+  border-color: #405044 !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
