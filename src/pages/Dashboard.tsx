@@ -5,9 +5,9 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, BookOpen, ChevronRight, CircleDot, FileCode2, Github, GitBranch, Layers3, Loader2, LogOut, RefreshCw, Search, Sparkles, Terminal, Upload } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronRight, CircleDot, FileCode2, Github, GitBranch, Layers3, Loader2, LogOut, RefreshCw, Search, Settings as SettingsIcon, Sparkles, Terminal, Upload } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 type Skill = "beginner" | "intermediate" | "advanced";
 
@@ -79,7 +79,7 @@ export default function Dashboard() {
   const isWorking = isSummarizing || isGenerating;
 
   return <main className="min-h-screen bg-[#faf8f2] text-[#1f231c]">
-    <header className="border-b border-[#e0dbd0] bg-[#fcfaf5]"><div className="mx-auto flex max-w-[1400px] items-center justify-between px-5 py-4 lg:px-8"><div className="flex items-center gap-3"><div className="flex size-8 items-center justify-center bg-[#1d3f2c] text-[#f7e8cd]"><Terminal className="size-4" /></div><span className="font-serif text-lg font-semibold">orbit</span><span className="hidden border-l border-[#e2ddd1] pl-3 font-mono text-[10px] text-[#8a867a] sm:block">STUDENT WORKSPACE</span></div><div className="flex items-center gap-4"><span className="hidden text-xs text-[#7a776b] sm:block">{user?.email ?? "student@workspace"}</span><button onClick={handleSignOut} className="flex items-center gap-2 text-xs text-[#6d6a5e] hover:text-[#1d3f2c]"><LogOut className="size-3.5" /> <span className="hidden sm:inline">sign out</span></button></div></div></header>
+    <header className="border-b border-[#e0dbd0] bg-[#fcfaf5]"><div className="mx-auto flex max-w-[1400px] items-center justify-between px-5 py-4 lg:px-8"><div className="flex items-center gap-3"><div className="flex size-8 items-center justify-center bg-[#1d3f2c] text-[#f7e8cd]"><Terminal className="size-4" /></div><span className="font-serif text-lg font-semibold">orbit</span><span className="hidden border-l border-[#e2ddd1] pl-3 font-mono text-[10px] text-[#8a867a] sm:block">STUDENT WORKSPACE</span></div><div className="flex items-center gap-4"><Link to="/settings" className="flex items-center gap-2 text-xs text-[#6d6a5e] transition-colors hover:text-[#1d3f2c]"><SettingsIcon className="size-3.5" /> <span className="hidden sm:inline">settings</span></Link><span className="hidden text-xs text-[#7a776b] sm:block">{user?.email ?? "student@workspace"}</span><button onClick={handleSignOut} className="flex items-center gap-2 text-xs text-[#6d6a5e] hover:text-[#1d3f2c]"><LogOut className="size-3.5" /> <span className="hidden sm:inline">sign out</span></button></div></div></header>
 
     <div className="mx-auto max-w-[1400px] px-5 py-8 lg:px-8 lg:py-10"><AnimatePresence mode="wait">
       {!course ? (
