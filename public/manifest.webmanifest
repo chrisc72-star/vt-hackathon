@@ -8,7 +8,7 @@
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "/orbit-logo.svg",
+      "src": "/orbit_logo_orange.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

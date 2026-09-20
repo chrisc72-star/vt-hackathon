@@ -27,7 +27,7 @@ export default function ProjectHelp() {
     <main className="orbit-workspace min-h-screen bg-[#faf8f2] text-[#1f231c]">
       <header className="border-b border-[#e0dbd0] bg-[#fcfaf5]">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-5 py-4 lg:px-8">            <div className="flex items-center gap-3">
-            <img src="/orbit-logo.svg" alt="Orbit" className="h-9 w-auto max-w-[140px] object-contain object-left" />
+            <img src="/orbit_logo_orange.svg" alt="Orbit" className="h-9 w-auto max-w-[140px] object-contain object-left" />
             <span className="hidden border-l border-[#e2ddd1] pl-3 font-mono text-[10px] text-[#8a867a] sm:block">PROJECT SETUP</span>
           </div>
           <Link to="/dashboard" className="flex items-center gap-2 font-mono text-xs text-[#6d6a5e] transition-colors hover:text-[#1d3f2c]"><ArrowLeft className="size-3.5" /> back to upload</Link>
