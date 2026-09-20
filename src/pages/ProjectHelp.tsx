@@ -65,10 +65,10 @@ export default function ProjectHelp() {
             </ul>
           </section>
           <section className="border border-[#ddd6c9] bg-[#fcfaf5] p-6 sm:p-8">
-            <p className="font-mono text-[10px] tracking-[.16em] text-[#8a867a]">NEED A WALKTHROUGH?</p>
-            <h2 className="mt-3 font-serif text-2xl font-semibold">GitHub explains the basics.</h2>
-            <p className="mt-3 text-sm leading-6 text-[#6d6a5e]">Their beginner guide covers creating a repository and adding files without using the command line.</p>
-            <a href="https://github.com/new" target="_blank" rel="noreferrer" className="mt-6 inline-flex items-center gap-2 font-mono text-xs font-semibold text-[#a85416] hover:text-[#c2571a]">Open GitHub’s new repository page <ExternalLink className="size-3.5" /></a>
+            <p className="font-mono text-[10px] tracking-[.16em] text-[#8a867a]">CREATE YOUR REPOSITORY</p>
+            <h2 className="mt-3 font-serif text-2xl font-semibold">Make your first repository.</h2>
+            <p className="mt-3 text-sm leading-6 text-[#6d6a5e]">Use GitHub’s new repository page to give your project a name, add a README file, and create the public repository Orbit will read.</p>
+            <a href="https://github.com/new" target="_blank" rel="noreferrer" className="mt-6 inline-flex items-center gap-2 font-mono text-xs font-semibold text-[#a85416] hover:text-[#c2571a]">Create a repository on GitHub <ExternalLink className="size-3.5" /></a>
           </section>
         </div>
 
