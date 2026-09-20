@@ -9,8 +9,11 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 //   commit) → LLM call #2 drafts modules + lessons with the skill level as a
 //   parameter. Persistence lives in courses.ts.
 
+// Model policy: this pipeline may ONLY call Haiku. The model is hardcoded
+// here and verified in the response below — no caller, env var, or future
+// edit elsewhere can route these calls to a different model.
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
-const MODEL = "claude-sonnet-4-5";
+const MODEL = "claude-haiku-4-5";
 
 // Anthropic has no native JSON mode, so we prompt for JSON-only output and
 // strip any fence the model still adds before parsing.
@@ -46,6 +49,11 @@ async function chatJSON<T>(system: string, user: string): Promise<T> {
     throw new Error(`LLM request failed (${res.status}): ${body.slice(0, 300)}`);
   }
   const data = await res.json();
+  // Enforce the Haiku-only policy: reject responses from any other model.
+  const responseModel: string = data.model ?? "";
+  if (!responseModel.includes("haiku")) {
+    throw new Error(`Model policy violation: expected a Haiku model, got "${responseModel}".`);
+  }
   const text = data.content?.find((block: { type: string }) => block.type === "text")?.text;
   if (!text) throw new Error("LLM returned an empty response.");
   return extractJSON(text) as T;
